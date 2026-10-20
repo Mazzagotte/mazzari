@@ -4,12 +4,9 @@ import {MESSAGE_LIMIT, messagePages, type PersonalMessage} from "../lib/messages
 import {returnDeadline} from "../lib/messageReturn";
 import {useState} from "react";
 
-export function MessageSettings({settings,onChange}:{settings:Settings;onChange:(next:Settings)=>void}) {
+export function DisplaySettings({settings,onChange}:{settings:Settings;onChange:(next:Settings)=>void}) {
   const [returnError,setReturnError]=useState("");
-  const update = (id:string, patch:Partial<PersonalMessage>) =>
-    onChange({...settings,messages:settings.messages.map(message=>message.id===id?{...message,...patch}:message)});
-  return <section>
-    <h3>DISPLAY</h3>
+  return <>
     <label>Display mode<select value={settings.displayMode} onChange={e=>{
       const mode=e.target.value;
       if(mode==="daily"||mode==="messages"||mode==="clock"){setReturnError("");onChange({...settings,displayMode:mode,returnToDailyAt:0});}
@@ -30,16 +27,24 @@ export function MessageSettings({settings,onChange}:{settings:Settings;onChange:
       {settings.returnToDailyAt>0&&<p className="hint" role="status">Returns {new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"}).format(new Date(settings.returnToDailyAt))}. This timer survives reloads; messages are not deleted.</p>}
       {returnError&&<p className="hint" role="alert">{returnError}</p>}
     </>}
-    <h3>PERSONAL MESSAGES</h3>
-    <p className="hint">Active messages rotate every 10 seconds. Daily board adds a message section; Message board shows messages alone. Clock only hides messages.</p>
+    <p className="hint">Daily board shows your clock, selected feeds and active messages. Message board shows messages alone; Clock only hides feeds and messages.</p>
+    <p className="hint">The grid fits the longest line across the active rotation, up to 24 columns. Empty rows are removed. Its width stays steady between cards and adjusts when content changes.</p>
+  </>;
+}
+
+export function MessageSettings({settings,onChange}:{settings:Settings;onChange:(next:Settings)=>void}) {
+  const update = (id:string, patch:Partial<PersonalMessage>) =>
+    onChange({...settings,messages:settings.messages.map(message=>message.id===id?{...message,...patch}:message)});
+  return <section aria-label="Personal message editor">
+    <p className="hint">Messages rotate every 10 seconds. {settings.messages.length} of 20 messages used.{settings.displayMode==="clock"?" Switch display mode to show them.":""}</p>
     {settings.messages.map((message,index)=><fieldset className="message-editor" key={message.id}>
       <legend>Message {index+1}</legend>
       <label className="check"><input type="checkbox" checked={message.enabled} onChange={e=>update(message.id,{enabled:e.target.checked})}/>Enabled</label>
       <label>Message text<textarea rows={3} maxLength={MESSAGE_LIMIT} value={message.text} placeholder="GOOD MORNING JAMES" onChange={e=>update(message.id,{text:e.target.value})}/></label>
       <div className="message-preview" aria-label={`Message ${index+1} preview`}>
-        {messagePages(message.text).map((page,i)=><pre key={i}>{page.map(line=>line.padEnd(24," ")).join("\n")}</pre>)}
+        {messagePages(message.text).map((page,i)=><pre key={i}>{page.filter(line=>line.trim()).join("\n")||"Your message preview"}</pre>)}
       </div>
-      <p className="hint">24 characters per row, up to 4 rows per page. Long messages continue on another page. Preview shows the exact supported lettering.</p>
+      <p className="hint">{message.text.length}/{MESSAGE_LIMIT} characters. Up to 24 columns and 4 rows per page; the board trims unused space.</p>
       <label className="check"><input type="checkbox" checked={message.scheduled} onChange={e=>update(message.id,{scheduled:e.target.checked})}/>Daily schedule</label>
       {message.scheduled&&<div className="two">
         <label>Show from<input type="time" value={message.start} onChange={e=>{if(e.target.value)update(message.id,{start:e.target.value})}}/></label>
@@ -51,6 +56,6 @@ export function MessageSettings({settings,onChange}:{settings:Settings;onChange:
     <button className="reset" disabled={settings.messages.length>=20} onClick={()=>onChange({...settings,messages:[...settings.messages,{
       id:crypto.randomUUID(),text:"",enabled:true,scheduled:false,start:"07:00",end:"10:00",expires:"",
     }]})}>Add message</button>
-    <p className="hint">Up to 20 messages. Schedules and expiration use {settings.city}&apos;s local time. Overnight windows are supported; equal times mean all day. Messages expire at the end of the selected date. Blank, disabled, and expired messages are hidden. If no messages are active in Message board mode, the clock is shown.</p>
+    <details className="settings-help"><summary>Scheduling &amp; message help</summary><p className="hint">Schedules use {settings.city}&apos;s local time. Overnight windows are supported; equal times mean all day. Messages expire at the end of the selected date. Blank, disabled and expired messages are hidden. Message board falls back to the clock when none are active. Long messages continue on another page.</p></details>
   </section>;
 }

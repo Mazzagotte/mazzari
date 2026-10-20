@@ -88,10 +88,25 @@ test("off-season fallback checks remaining season phases and next-season preseas
 
 test("unannounced start times stay TBD without inventing midnight or shifting the calendar day",()=>{
   const scheduled=game("tbd","pre","NYY","2027-02-19T05:00:00Z");
-  const status=gamePages({...scheduled,startTimeTbd:true},"America/Boise").status.join(" ");
+  const entry=gamePages({...scheduled,startTimeTbd:true},"America/Boise");
+  assert.deepEqual(entry.status,["NEXT FEB 19 TIME TBD"]);
+  const status=entry.status.join(" ");
   assert.ok(status.includes("FEB 19"));
   assert.ok(status.includes("TIME TBD"));
   assert.ok(!status.includes("PM")&&!status.includes("AM"));
+});
+
+test("upcoming game date and complete local start time fit together on one rotation page",()=>{
+  const scheduled=game("start","pre","NYY","2026-10-24T00:00:00Z");
+  assert.deepEqual(gamePages(scheduled,"America/Boise").status,["NEXT OCT 23 6:00 PM"]);
+  for(const timezone of ["America/Boise","America/New_York","Europe/London","Asia/Kolkata","Pacific/Auckland"]){
+    for(const date of ["2026-09-30T00:59:00Z","2026-12-31T12:59:00Z","2027-01-01T07:05:00Z"]){
+      const entry=gamePages({...scheduled,date},timezone);
+      assert.equal(entry.status.length,1);
+      assert.ok(entry.status[0].length<=24);
+      assert.match(entry.status[0],/^NEXT [A-Z]{3} \d{1,2} \d{1,2}:\d{2} [AP]M$/);
+    }
+  }
 });
 
 test("favorite fallback is per-team, deduplicated, local-date aware and never overrides live matchups",()=>{

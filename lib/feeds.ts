@@ -28,6 +28,7 @@ export function isGameFeed(value:unknown):value is {games:Game[]} {
     (game.startTimeTbd === undefined || typeof game.startTimeTbd === "boolean") &&
     (game.details === undefined || (Array.isArray(game.details) && game.details.every(detail => typeof detail === "string"))) &&
     (game.essentialDetails === undefined || (Array.isArray(game.essentialDetails) && game.essentialDetails.every(detail => typeof detail === "string"))) &&
+    (game.priorityDetail === undefined || (typeof game.priorityDetail === "string" && game.priorityDetail.length <= 24)) &&
     (game.date === undefined || (typeof game.date === "string" && Number.isFinite(Date.parse(game.date)))) &&
     Array.isArray(game.teams) && game.teams.every(team => isRecord(team) &&
       typeof team.abbr === "string" && typeof team.score === "string" && typeof team.homeAway === "string"));

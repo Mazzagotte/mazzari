@@ -1,11 +1,12 @@
 "use client";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState,type CSSProperties} from "react";
 import {Board} from "../components/Board";
 import {SettingsPanel} from "../components/SettingsPanel";
 import {DEFAULTS, League, Settings, leagueLabel, restoreSettings, weatherDescription} from "../lib/config";
 import {favoriteTeams,feedStatus, Game, gamePages, isQuietTime, orderGames, pages, selectGamePage} from "../lib/display";
 import {isGameFeed, isWeather, Weather} from "../lib/feeds";
-import {activeMessages, rotatingMessage} from "../lib/messages";
+import {activeMessages, messagePages, rotatingMessage} from "../lib/messages";
+import {boardLayout} from "../lib/boardLayout";
 import {eveningActive} from "../lib/evening";
 import {createClickBuffer,playMechanicalClick} from "../lib/mechanicalAudio";
 import {Wordmark} from "../components/Wordmark";
@@ -30,6 +31,7 @@ export default function Home() {
   const [schedules,setSchedules]=useState<Partial<Record<League,{key:string;feed:Feed<Game[]>}>>>({});
   const [finals,setFinals]=useState<FinalCache>({});
   const [fullscreen, setFullscreen] = useState(false);
+  const [canFullscreen,setCanFullscreen]=useState(false);
   const [systemMotion, setSystemMotion] = useState(false);
   const [tick, setTick] = useState(0);
   const [notice, setNotice] = useState("");
@@ -80,6 +82,7 @@ export default function Home() {
       setNotice("Saved final scores could not be loaded. New finals will still be tracked.");
     }
     setReady(true);
+    setCanFullscreen(document.fullscreenEnabled&&typeof document.documentElement.requestFullscreen==="function");
     setNow(new Date());
     let lastClock=Date.now();
     const clock = setInterval(() => {
@@ -276,7 +279,8 @@ export default function Home() {
 
   const current = now || new Date(0);
   const evening=!!now&&eveningActive(settings.eveningDimming,current,settings.timezone,settings.eveningStart,settings.eveningEnd);
-  const message = now ? rotatingMessage(activeMessages(settings.messages,current,settings.timezone),tick) : null;
+  const messages=now?activeMessages(settings.messages,current,settings.timezone):[];
+  const message=rotatingMessage(messages,tick);
   const weatherState = feedStatus(settings.showWeather || settings.showForecast, weather.failed, weather.updated, current.getTime());
   const sportsSections = useMemo(() => settings.leagues.map(league => {
     const feed = sports[league] || emptyFeed<Game[]>();
@@ -294,22 +298,28 @@ export default function Home() {
       ...(settings.showSeconds ? {second:"2-digit"} : {}), hour12:!settings.time24}).toUpperCase() : "STARTING CLOCK",
     now ? safeTime(current, settings.timezone, {weekday:"short", month:"short", day:"numeric"}).toUpperCase() : "",
   ];
+  const clockLines=[...lines];
+  const rotationLines=[...clockLines];
   const w = weather.data?.current, d = weather.data?.daily;
   const unit = settings.unit === "fahrenheit" ? "F" : "C";
   if(settings.showWeather||settings.showForecast)sectionStarts.push(lines.length);
   if (settings.showWeather) {
+    if(w)rotationLines.push(...pages(`${Math.round(w.temperature_2m)}${unit} ${weatherDescription(w.weather_code)}`),
+      `WIND ${Math.round(w.wind_speed_10m)} MPH`,`FEELS ${Math.round(w.apparent_temperature)}${unit} HUM ${Math.round(w.relative_humidity_2m)}%`);
     lines.push(w ? rotate(`${Math.round(w.temperature_2m)}${unit} ${weatherDescription(w.weather_code)}`) : `WEATHER ${weatherState}`,
       w ? (tick % 2 ? `WIND ${Math.round(w.wind_speed_10m)} MPH` : `FEELS ${Math.round(w.apparent_temperature)}${unit} HUM ${Math.round(w.relative_humidity_2m)}%`) : "");
   }
   if (settings.showForecast) {
     lines.push(d ? `HIGH ${Math.round(d.temperature_2m_max[0])}${unit} LOW ${Math.round(d.temperature_2m_min[0])}${unit}` : `FORECAST ${weatherState}`,
       d ? `RAIN ${Math.round(d.precipitation_probability_max[0])}%` : "");
+    rotationLines.push(...lines.slice(-2));
   }
   sportsSections.forEach(({league, feed, entries,schedule,hasFavorites}, index) => {
     const selection = selectGamePage(entries, tick);
     sectionStarts.push(lines.length);
     lines.push(leagueLabel(league));
     if (selection) {
+      rotationLines.push(leagueLabel(league),...entries.flatMap(entry=>[...entry.matchup,...entry.status]));
       const entry = entries[selection.index];
       lines.push(entry.matchup[selection.page % entry.matchup.length], entry.status[selection.page % entry.status.length]);
     } else {
@@ -320,21 +330,29 @@ export default function Home() {
   if(settings.displayMode==="daily"&&message){sectionStarts.push(lines.length);lines.push(...message);}
   else if(settings.displayMode==="messages"&&message)lines.splice(0,lines.length,...message);
   else if(settings.displayMode!=="daily")lines.splice(2);
-  const rowCount=lines.length;
+  const messageLines=messages.flatMap(item=>messagePages(item.text).flat());
+  const sizingLines=settings.displayMode==="daily"?[...rotationLines,...messageLines]:
+    settings.displayMode==="messages"&&message?messageLines:clockLines;
+  const layout=boardLayout(lines,sizingLines,settings.displayMode==="daily"?sectionStarts:[]);
+  const rowCount=layout.lines.length;
   const clockVisible=settings.displayMode!=="messages"||!message;
-  const aspectRatio=1.75*12/(rowCount+(clockVisible ? .35 : 0));
+  const aspectRatio=1.75*12*(layout.columns/24)/(rowCount+(clockVisible ? .35 : 0));
+  const stageStyle:CSSProperties & {"--fit-width":string;"--readable-board-height":string}={
+    aspectRatio,"--fit-width":`min(100cqw, ${aspectRatio * 100}cqh, 1800px)`,
+    "--readable-board-height":`${(rowCount+(clockVisible ? .35 : 0))*30+12}px`,
+  };
   const describeFeed = (name:string, state:string, updated:number|null) =>
     `${name}: ${state}${updated && state !== "OFF" ? ` (${safeTime(new Date(updated), settings.timezone, {hour:"numeric", minute:"2-digit"})})` : ""}`;
 
-  return <main className={`app ${controlsVisible || panel ? "" : "display-idle"}`} onPointerDown={unlockAudio}>
+  return <main className={`app ${controlsVisible || panel ? "" : "display-idle"}${panel?" settings-open":""}`} onPointerDown={unlockAudio}>
     <div className="instrument-face" style={{filter:evening?`brightness(${settings.eveningBrightness})`:undefined}}>
     <header className="identity">
       <Wordmark/>
       <div className="model-number"><span/>NO. 1<span/></div>
     </header>
     {notice && <div className="notice" role="alert">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss notification">X</button></div>}
-    <div className="display-area"><div className="board-stage" style={{aspectRatio,width:`min(100cqw, ${aspectRatio * 100}cqh, 1800px)`}}>
-      <Board lines={lines} speed={settings.speed} onFlip={onFlip} reducedMotion={reducedMotion} sectionStarts={settings.displayMode==="daily"?sectionStarts:[]} emphasizeClock={clockVisible}/>
+    <div className="display-area"><div className="board-stage" style={stageStyle}>
+      <Board lines={layout.lines} columns={layout.columns} speed={settings.speed} onFlip={onFlip} reducedMotion={reducedMotion} sectionStarts={layout.sectionStarts} emphasizeClock={clockVisible}/>
     </div></div>
     {settings.displayMode==="daily"&&<footer className="feed-warnings" role="status">
       {["STALE","OFFLINE"].includes(weatherState) && <span>{describeFeed("WEATHER", weatherState, weather.updated)}</span>}
@@ -348,10 +366,10 @@ export default function Home() {
     </div>
     <div className="topbar">
       <div className="actions">
-        {settings.displayMode==="daily"&&<button title="Refresh information" disabled={refreshing} onClick={() => setRefreshId(value => value + 1)}><RefreshCw size={17}/><span>{refreshing ? "SYNCING" : "REFRESH"}</span></button>}
-        <button title="Toggle audio" aria-pressed={settings.sound} onClick={() => setSettings(s => ({...s, sound:!s.sound}))}>{settings.sound ? <Volume2 size={18}/> : <VolumeX size={18}/>}<span>SOUND</span></button>
-        <button title="Fullscreen" onClick={() => void toggleFull()}>{fullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}<span>FULLSCREEN</span></button>
-        <button className="settings-button" title="Settings" onClick={() => setPanel(true)}><Settings2 size={18}/><span>SETTINGS</span></button>
+        {settings.displayMode==="daily"&&<button title="Refresh information" aria-label="Refresh information" disabled={refreshing} onClick={() => setRefreshId(value => value + 1)}><RefreshCw size={17}/><span>{refreshing ? "SYNCING" : "REFRESH"}</span></button>}
+        <button title="Toggle audio" aria-label="Toggle audio" aria-pressed={settings.sound} onClick={() => setSettings(s => ({...s, sound:!s.sound}))}>{settings.sound ? <Volume2 size={18}/> : <VolumeX size={18}/>}<span>SOUND</span></button>
+        {canFullscreen&&<button title="Fullscreen" aria-label={fullscreen?"Exit fullscreen":"Fullscreen"} onClick={() => void toggleFull()}>{fullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}<span>FULLSCREEN</span></button>}
+        <button className="settings-button" title="Settings" aria-label="Settings" onClick={() => setPanel(true)}><Settings2 size={18}/><span>SETTINGS</span></button>
       </div>
     </div>
     {panel && <SettingsPanel settings={settings} onChange={setSettings} onClose={()=>setPanel(false)} awakeStatus={awakeStatus} onRetryAwake={()=>setAwakeRetry(value=>value+1)}/>}

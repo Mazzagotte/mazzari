@@ -1,12 +1,16 @@
 # MAZZARI No. 1 — Mazzagotte Instrument Company
 
-A personal airport-inspired split-flap smart display built with Next.js, React, TypeScript, and CSS 3D animations. It shows a local clock, today's weather, and sports scores/schedules on a full-screen 24-column board. Rows are allocated only for the clock/date, enabled weather sections, and selected sports leagues.
+A personal airport-inspired split-flap smart display built with Next.js, React, TypeScript, and CSS 3D animations. It shows a local clock, today's weather, and sports scores/schedules on an adaptive board with up to 24 columns. Rows are allocated only for active content, including selected sports leagues and personal messages.
 
 Styled as a dark green instrument enclosure with brass detailing, MAZZARI No. 1 retains all weather, sports, accessibility, and configuration features. **Electromechanical information system. Precision in every flip.** Existing browser preferences and launcher filenames remain compatible.
 
 The design takes its cues from mid-century Italian instruments: olive-black enamel, parchment lettering, and restrained champagne trim. The clean display retains only MAZZARI / No. 1 branding and useful information: no corner labels, taglines, repeated headings, array dimensions, or healthy-feed diagnostics. Controls disappear after five seconds of inactivity; moving the pointer, touching the display, or using the keyboard reveals them. Keyboard-focused controls remain visible, and touch screens retain higher idle contrast. The board does not shift when controls fade. Stale/offline warnings remain visible whenever attention is needed.
 
 Subtle champagne rules separate the clock, combined current-weather/forecast section, each selected sports league, and active personal messages. Dividers do not consume flap rows and are omitted in Message board and Clock only modes.
+
+The physical grid uses only as many columns as the longest line in the current rotation needs, up to 24. All active message pages, game cards and weather alternatives are measured together so columns do not change on every flip. New feed content, settings or message schedules can change the size. Empty rows are removed, and dividers follow their sections. Message wrapping and the Settings preview retain the 24-character maximum.
+
+On phones (and short landscape touch screens), the board uses the available width with a minimum row height rather than shrinking a long board to fit. Scroll vertically to see additional leagues or messages; the labeled touch toolbar stays at the top. Tablets and desktops retain the full-board fit. Touch controls have larger targets, Settings uses 16px form text to avoid focus zoom on iOS, and phone Settings fills the screen with its own scrolling area. Safe-area insets protect notched-screen edges; browser zoom remains enabled. Fullscreen is shown only when the browser supports it.
 
 Changed characters start in a gentle left-to-right ripple (18 ms between columns); unchanged cells do not animate. Reduced motion bypasses the ripple and mechanical animation.
 
@@ -77,10 +81,12 @@ To launch FLAP automatically when you sign in to Windows, create a shortcut to `
 - **Audio**: synthesized click sound using the Web Audio API; no sound files required. Browsers typically require clicking the page once to enable audio.
 - **Settings**: saved to your browser `localStorage`; no database, login, account, or API key is needed.
 - **Feed health**: weather and each selected sports league show their own status and last successful update time. Failed refreshes retain the last successful data and mark it **STALE**; data older than five minutes is also stale. **OFFLINE** means no successful data is available. The header reports **DEGRADED** if any enabled feed is stale or offline, **CONNECTING** while loading, and **LOCAL** when weather and sports are disabled.
-- **Display**: the complete board fits within the available viewport, including all selected leagues. More leagues mean a taller board and smaller text; selecting one or two leagues is recommended for smaller screens. Longer weather descriptions and game details wrap into 24-character pages rather than dropping their remaining words. Detail pages rotate every 10 seconds while the matchup/score stays visible. The game clock/status repeats between detail cards. Each game gets 20 seconds per visit, with additional cards appearing on subsequent visits so other games are not starved.
+- **Display**: tablets and desktops fit the complete board within the available viewport. Phones prioritize readable rows and allow vertical scrolling for longer boards. Longer weather descriptions and game details wrap into 24-character pages rather than dropping their remaining words. Detail pages rotate every 10 seconds while the matchup/score stays visible. The game clock/status repeats between detail cards. Each game gets 20 seconds per visit, with additional cards appearing on subsequent visits so other games are not starved.
 - **Accessibility**: enable reduced motion in Settings to disable mechanical animation and click sounds; the operating system's reduced-motion preference is also respected. Quiet hours mute sounds according to the board's selected timezone, including overnight schedules. Matching start and end times mute all day.
 
 ## Configuration notes
+
+Settings are organized into collapsible Display, Location & Weather, Sports, Personal Messages, Screen & Sound, and Backup & Reset sections. Changes save immediately in this browser; there is no Save button. Team pickers have search and a compact selected-team summary, with manual abbreviations available when needed. Restoring defaults requires confirmation and removes saved messages and preferences, so export a backup first. Escape closes Settings, and keyboard focus stays inside the dialog until it closes.
 
 ### Personal messages and display modes
 
@@ -96,17 +102,19 @@ Search for a city in Settings and select a result to set the weather location an
 
 **Favorites only** in Settings limits every league to its saved favorite teams. With no matching games (or no favorites selected for that league), the section quietly reads **NO FAVORITE GAMES**; unrelated games are never substituted. This filters the current scoreboard and does not look up future schedules. Favorites remain saved per league when disabled or after restarting this browser; the kiosk profile stores its own preferences.
 
-**Essential game details only** is enabled by default: score, clock/status and live situation cards stay, while extra game statistics and last-play descriptions are excluded. Turn it off to restore the full game-detail rotation described below. Favorites-only filtering is off by default to preserve existing game visibility.
+**Essential game details only** is enabled by default: score, clock/status, live situations and relevant playoff context stay. Turning it off adds selected game statistics or a final-game standout, not an unfiltered statistics feed. Each mode uses at most three detail cards per game, each fitting one 24-character row. Favorites-only filtering is off by default to preserve existing game visibility.
 
 The existing three-row league sections rotate available information automatically:
 
-- **NFL / CFB**: quarter/clock, down and yards to go, field position, possession, red zone, timeouts, last play, and available team game statistics.
-- **MLB**: inning/status, balls/strikes, outs, occupied bases, current batter/pitcher, pitcher statistics (including pitch count when supplied), last-pitch speed/type when supplied, last play, and team statistics.
-- **NBA / college basketball**: period/clock and available team statistics such as shooting, rebounds, assists, turnovers and fouls, plus last play.
-- **NHL**: period/clock, available power-play/penalty-shot and skater-strength indicators, shots, saves and other team statistics, plus last play.
-- **All leagues**: only game-relevant details and team game statistics are shown. Records, rankings, season statistics, leaders, scoring breakdowns, probable players, venue, TV networks, series summaries and decorative event notes are omitted. Pregame cards show the matchup and start time without season-stat rotations.
+- **NFL / CFB**: compact quarter/clock, combined possession and down/distance (`DAL BALL / 3RD/4`), red zone, field position and paired remaining timeouts. Red-zone or fourth-down situations outrank routine details. Full mode can add paired total yards.
+- **MLB**: inning/status, combined count/outs/bases (`0-2 / 2 OUT / 1ST 3RD`), current batter and pitcher. Scoring-position runners take priority; late tied or one-run games get a concise context card. Pregame can show each team's probable starting pitcher. Full mode can add last-pitch speed when there is room.
+- **NBA / college basketball**: quarter or college half/clock, explicit bonus indicators and remaining timeouts. Full mode can add paired fouls, three-point shooting or a supplied shot clock.
+- **NHL**: period/clock, identified power-play team and supplied skater strength (`NYR PP / 5 ON 4`), penalty shots and explicit empty-net indicators. Full mode can add paired shots on goal.
+- **Important moments**: penalty shots, power plays, red-zone/fourth-down situations, scoring-position runners, overtime and close final-two-minute situations repeat ahead of secondary cards. Score stays visible; the provider's clock/status remains between cards. No local countdown or extra rows are added, and other games retain their normal turns.
+- **Game stages**: upcoming games keep the date and complete local start time together on one line (`NEXT OCT 23 6:00 PM`), or show `TIME TBD` when unannounced. Delayed, suspended, postponed and canceled games show their actual condition instead of an invented upcoming time. Finals retain supplied overtime/shootout distinctions and extra innings. Full mode can show one compact game-performance leader; season leaders are not used.
+- **Playoffs**: a confirmed playoff series can show its lead/tie/result and recognized round or game number, with special priority for Game 7. A context slot is reserved even in a busy game. Regular-season series, promotional notes, records, rankings, venue and TV information stay off the board.
 
-Missing fields are omitted rather than guessed; zero counts and statistics remain visible. ESPN may not provide every category for every game, particularly before kickoff, after the final whistle, or for smaller college programs. Live-game summaries are fetched with bounded concurrency and a time budget. If extra stats cannot be retrieved, scoreboard data remains visible with an **EXTRA STATS UNAVAILABLE** detail card. Long stat rotations can take several visits, especially with a large slate.
+Missing fields are omitted rather than guessed; supplied zero counts and timeouts remain visible. Overlong names use a supplied shorter name when possible, otherwise the card is omitted instead of splitting an athlete's name across visits. ESPN may not provide every category for every game, particularly before kickoff, after the final whistle, or for smaller college programs. Live-game summaries are fetched with bounded concurrency and a time budget. If extra details cannot be retrieved, scoreboard data remains visible and full mode includes a **DETAILS UNAVAILABLE** card. Cards are selected by relevance rather than cycling through arbitrary provider statistics or long last-play descriptions.
 
 ## Quality notes and known limitations
 
@@ -116,7 +124,7 @@ Missing fields are omitted rather than guessed; zero counts and statistics remai
 - Third-party score feeds may have delays or disappear, especially outside a league's season; ESPN has not provided a formal stable API contract for this endpoint.
 - Weather data is not suitable for safety-critical decisions.
 - Board animation can be computationally demanding on low-power devices; use a fast browser / lower resolution if needed.
-- A 24-column board is inherently compact; on small phone screens the complete board fits but text is small. Landscape or a dedicated monitor is recommended.
+- A 24-column line is inherently compact on the smallest phones. Phone rows maintain a minimum height and allow vertical scrolling rather than squeezing all leagues into one screen; a tablet or dedicated monitor remains best for viewing every section at once.
 
 ## Production build
 

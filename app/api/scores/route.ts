@@ -25,7 +25,7 @@ export async function GET(request:NextRequest){
     games[index]=normalizeGame(json.events[index],league as League,data);
    }catch(error){
     console.error(`Extra stats unavailable for ${league} game ${games[index].id}`,error);
-    games[index].details?.push("EXTRA STATS UNAVAILABLE");
+    games[index].details=[...(games[index].details||[]).slice(0,2),"DETAILS UNAVAILABLE"];
    }
   }
  }

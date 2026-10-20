@@ -7,6 +7,7 @@ export type Game = {
   teams: {abbr: string; score: string; homeAway: string}[];
   details?: string[];
   essentialDetails?: string[];
+  priorityDetail?: string;
 };
 
 export function pages(text: string, width = 24): string[] {
@@ -44,17 +45,30 @@ export function orderGames(games: Game[], favorites: string, favoritesOnly = fal
 export function gamePages(game:Game, zone:string, essentialOnly = false):{matchup:string[]; status:string[]} {
   const away = game.teams.find(team => team.homeAway === "away") || game.teams[0];
   const home = game.teams.find(team => team.homeAway === "home") || game.teams[1];
-  const matchup = away && home ? (game.state === "pre" ? `${away.abbr} AT ${home.abbr}` :
+  const exceptional = /DELAY|POSTPON|SUSPEND|CANCEL|ABANDON|FORFEIT/i.test(game.status);
+  const matchup = away && home ? (game.state === "pre" || /CANCEL|POSTPON/i.test(game.status) ? `${away.abbr} AT ${home.abbr}` :
     `${away.abbr} ${away.score} - ${home.abbr} ${home.score}`) : "MATCHUP UNAVAILABLE";
-  const detail = game.state === "pre" && game.date ? new Intl.DateTimeFormat("en-US",
-    {timeZone:game.startTimeTbd?"UTC":zone, weekday:"short", month:"short", day:"numeric", ...(!game.startTimeTbd?{hour:"numeric" as const,minute:"2-digit" as const}:{})}).format(new Date(game.date))+(game.startTimeTbd?" TIME TBD":"") : game.status;
+  let detail=game.status;
+  if(game.state==="pre"&&game.date&&!exceptional){
+    const date=new Date(game.date);
+    const day=new Intl.DateTimeFormat("en-US",{timeZone:game.startTimeTbd?"UTC":zone,month:"short",day:"numeric"}).format(date);
+    const time=game.startTimeTbd?"TIME TBD":new Intl.DateTimeFormat("en-US",
+      {timeZone:zone,hour:"numeric",minute:"2-digit",hour12:true}).format(date);
+    detail=`${day} ${time}`;
+  }
   const state = game.state === "in" ? "LIVE" : game.state === "post" ? "FINAL" : "NEXT";
-  const heading = pages(detail.toUpperCase().startsWith(state) ? detail : `${state} ${detail}`);
+  const heading = pages(exceptional || detail.toUpperCase().startsWith(state) ? detail : `${state} ${detail}`);
   const extra = (essentialOnly ? game.essentialDetails || [] : game.details || []).flatMap(item => pages(item));
   const status = [...heading];
   // Repeat the clock/status between detail cards so a long rotation retains game context.
   for (const item of extra) {
     status.push(item, ...heading);
+  }
+  if(game.priorityDetail && extra.includes(game.priorityDetail.toUpperCase())){
+    const priority=game.priorityDetail.toUpperCase();
+    const others=extra.filter(item=>item!==priority);
+    return {matchup:pages(matchup),status:others.length?
+      others.flatMap(item=>[...heading,priority,...heading,item]):[...heading,priority]};
   }
   return {matchup:pages(matchup), status};
 }
