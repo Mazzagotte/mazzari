@@ -1,0 +1,143 @@
+# MAZZARI No. 1 — Mazzagotte Instrument Company
+
+A personal airport-inspired split-flap smart display built with Next.js, React, TypeScript, and CSS 3D animations. It shows a local clock, today's weather, and sports scores/schedules on a full-screen 24-column board. Rows are allocated only for the clock/date, enabled weather sections, and selected sports leagues.
+
+Styled as a dark green instrument enclosure with brass detailing, MAZZARI No. 1 retains all weather, sports, accessibility, and configuration features. **Electromechanical information system. Precision in every flip.** Existing browser preferences and launcher filenames remain compatible.
+
+The design takes its cues from mid-century Italian instruments: olive-black enamel, parchment lettering, and restrained champagne trim. The clean display retains only MAZZARI / No. 1 branding and useful information: no corner labels, taglines, repeated headings, array dimensions, or healthy-feed diagnostics. Controls disappear after five seconds of inactivity; moving the pointer, touching the display, or using the keyboard reveals them. Keyboard-focused controls remain visible, and touch screens retain higher idle contrast. The board does not shift when controls fade. Stale/offline warnings remain visible whenever attention is needed.
+
+Subtle champagne rules separate the clock, combined current-weather/forecast section, each selected sports league, and active personal messages. Dividers do not consume flap rows and are omitted in Message board and Clock only modes.
+
+Changed characters start in a gentle left-to-right ripple (18 ms between columns); unchanged cells do not animate. Reduced motion bypasses the ripple and mechanical animation.
+
+The clock has a taller first row and larger lettering, except during message-only display. The MAZZARI wordmark is an original vector drawing with geometric M, A and R forms, rendered locally without web fonts. Mechanical audio combines a brief filtered contact sound and a muted resonant body, with slight variations and a maximum of one click every 110 ms across the entire board.
+
+Maker branding stays off the instrument face: a simplified champagne M monogram appears in the browser icon and Settings header, with a geometric MAZZAGOTTE.DEV maker credit in Settings' About section. These locally served vector adaptations use transparent artwork for Settings and an olive-backed browser icon for small-size contrast; they do not embed the reference images' backgrounds or require external fonts or requests.
+
+### Evening and dedicated-screen comfort
+
+Under **Settings > Evening & Screen**, optionally enable:
+
+- **Scheduled evening dimming**: default hours are 21:00–07:00 in your selected city's timezone. Choose hours and 20–80% brightness. Equal hours mean all day; overnight windows and daylight-saving time follow local time. During the window, the instrument face dims and mechanical sound is muted. Settings and controls stay at normal brightness so you can adjust them.
+- **Keep screen awake**: requests the browser's Screen Wake Lock while visible, and tries again when the display returns or you interact with it. Settings shows the actual request/release/error state and provides a retry button. Support, permissions and device power-saving policies can limit availability. It is not a burn-in prevention feature.
+
+Both options are off by default, preserving existing screen/power behavior. Clock, messages, favorites and schedules are preserved. Daily feeds refresh promptly when the page becomes visible, regains focus, reconnects, or returns after a long timer gap (such as sleep), while duplicate in-flight refreshes are avoided. Failed refreshes retain the last good data with the existing stale/offline warnings.
+
+### Settings backup and timed messages
+
+**Settings > Backup & Restore** exports a versioned JSON file containing your city, time/weather preferences, each league's favorites, messages, schedules, display mode, and sound/screen preferences. Import validates the file and asks you to confirm replacement before changing anything. Unsupported, malformed, or oversized files (over 1 MB) leave existing settings unchanged. Backups include private messages and location; keep them private. They do not include live feed data or the browser's retained final-score cache. Restore inside the kiosk browser to transfer preferences to its separate profile.
+
+In **Message board** mode, **Return to Daily board** offers 30 minutes, 2 hours, or tomorrow at 7 AM in the selected city's timezone. Choose a duration to start the timer immediately, or select **Stay on Message board** to cancel it. The absolute deadline survives reloads and sleep; reopening after the deadline returns to Daily board immediately. Tomorrow morning follows the local calendar across daylight-saving changes. Changing modes cancels the timer; returning to Daily board never deletes messages. A restored backup keeps its original deadline, not a new duration.
+
+### Favorite-team awareness
+
+Enabled leagues automatically look up the next game in each favorite team's published ESPN schedule when that team has no current scoreboard matchup or eligible retained final. Abbreviations are resolved through the team directory to numeric IDs, avoiding ambiguous college-team URL aliases. The board uses existing rows and shows the matchup plus the local date/start time. When the start time is not announced, it keeps the provider's calendar date and shows **TIME TBD**, rather than converting a placeholder midnight to a false local time. Multiple favorites remain independent; duplicate matchups are shown once. Favorites-only still excludes every unrelated team.
+
+**Keep favorite final scores** offers no retention or 6, 12, 24 (default), or 48 hours. A favorite's final is recorded when this browser first observes the completed game on the scoreboard; ESPN does not reliably supply a final-whistle timestamp. That first-observed time and score survive reloads, and polling does not restart the retention period. When it expires, that final drops out and the next scheduled game can take its place. Live favorite games rank first. Only finals the browser has observed are retained; this is not a historical results archive.
+
+Schedules refresh every five minutes, on manual refresh, and on reconnect/resume. Team schedules are cached server-side for five minutes; live scoreboard polling remains every 30 seconds. If the default schedule has no future matchup, lookup checks remaining season phases and the next season's preseason/regular schedule, using a shared time budget and at most four concurrent schedule requests per league. If a schedule fails, prior data for that exact league/favorite selection is retained and a stale/offline schedule warning appears. Invalid or ambiguous abbreviations are reported as unavailable, not guessed. If no future game is published (including the off-season), no matchup is invented: favorites-only shows **NO FAVORITE GAMES** once lookup succeeds.
+
+## Quick start (Windows / VS Code)
+
+1. Unzip the folder and open it in Visual Studio Code (`File > Open Folder`).
+2. Install **Node.js 20.9 or later** if it is not already installed.
+3. Open **Terminal > New Terminal**.
+4. Run:
+
+   ```powershell
+   npm install
+   npm run dev
+   ```
+
+5. Open **http://localhost:1000** in your browser.
+6. Click **SETTINGS** to choose your city, temperature units, sports leagues, favorite teams, sounds, and animation speed. Local time is set automatically from your city.
+7. Click **FULLSCREEN** to turn the screen into a display. The browser may require a user interaction before it can play sound; click anywhere on the page if clicks are silent.
+
+### One-click Windows startup
+
+Double-click `start-display.bat` in either the outer extracted folder or the app folder. It checks for Node.js 20.9 or later, installs dependencies if needed, builds the production app, waits for the server to respond, and opens your default browser. The first build needs internet access to install packages and can take a few minutes. Keep the server window open; close it to stop the display.
+
+From a PowerShell terminal in the outer extracted folder:
+
+```powershell
+.\start-display.bat
+```
+
+For a dedicated screen, double-click `start-kiosk.bat`. It opens **Google Chrome** in kiosk mode using a separate FLAP browser profile. Install Chrome first; press `Alt+F4` to leave kiosk mode. Configure settings in that profile once, since they are separate from your default browser.
+
+Both launchers reuse an already-running FLAP server instead of starting another. If you previously ran `npm run dev`, stop it with `Ctrl+C` in its terminal before using the launcher to switch to production. A different service on port 1000 is reported rather than opened as FLAP. To start without opening a browser, run `.\start-display.bat -NoBrowser`.
+
+To launch FLAP automatically when you sign in to Windows, create a shortcut to `start-display.bat` (or `start-kiosk.bat`), press `Win+R`, enter `shell:startup`, and move the shortcut into the Startup folder. This runs at sign-in, not before login.
+
+## How it works
+
+- **Clock**: browser time, formatted in your selected IANA timezone (default `America/Boise`). No internet necessary.
+- **Weather**: Open-Meteo public forecast endpoint, refreshed every 2 minutes in the browser; Next.js server caches each weather request for up to 10 minutes. Default coordinates: Boise, Idaho. Does not use your precise location.
+- **Scores**: ESPN's publicly accessible (but **unofficial and not guaranteed stable**) scoreboard and live-game summary endpoints, retrieved server-side to avoid browser cross-origin issues. Feeds refresh every 30 seconds; scores are cached server-side for up to 30 seconds. These are periodic snapshots, not a pitch-by-pitch or second-by-second live stream. Select any combination of **MLB, NFL, college football (CFB), NBA, NHL, and men's college basketball**, or turn them all off with **No sports**. Every selected league has its own simultaneously visible three-row scoreboard. Games rotate independently within each league every 20 seconds, ordered by favorite teams first, then live, scheduled, and final games.
+- **Audio**: synthesized click sound using the Web Audio API; no sound files required. Browsers typically require clicking the page once to enable audio.
+- **Settings**: saved to your browser `localStorage`; no database, login, account, or API key is needed.
+- **Feed health**: weather and each selected sports league show their own status and last successful update time. Failed refreshes retain the last successful data and mark it **STALE**; data older than five minutes is also stale. **OFFLINE** means no successful data is available. The header reports **DEGRADED** if any enabled feed is stale or offline, **CONNECTING** while loading, and **LOCAL** when weather and sports are disabled.
+- **Display**: the complete board fits within the available viewport, including all selected leagues. More leagues mean a taller board and smaller text; selecting one or two leagues is recommended for smaller screens. Longer weather descriptions and game details wrap into 24-character pages rather than dropping their remaining words. Detail pages rotate every 10 seconds while the matchup/score stays visible. The game clock/status repeats between detail cards. Each game gets 20 seconds per visit, with additional cards appearing on subsequent visits so other games are not starved.
+- **Accessibility**: enable reduced motion in Settings to disable mechanical animation and click sounds; the operating system's reduced-motion preference is also respected. Quiet hours mute sounds according to the board's selected timezone, including overnight schedules. Matching start and end times mute all day.
+
+## Configuration notes
+
+### Personal messages and display modes
+
+In Settings, choose **Daily board**, **Message board**, or **Clock only**. Add up to 20 personal messages (240 characters each). Enabled messages appear below the daily information or take over the board in Message board mode. Clock only shows time/date without messages. Weather and sports polling pauses outside Daily board mode.
+
+The preview uses the board's exact 24-character wrapping and supported uppercase lettering. Accented Latin letters are simplified and `&` becomes `AND`; unsupported symbols are not displayed. Explicit line breaks are preserved. Long messages continue onto additional pages of up to four rows, rotating every 10 seconds along with other active messages.
+
+Optionally enable a daily time window and expiration date. Both use your selected city's timezone, not the computer's timezone. Windows include the start and exclude the end; overnight windows work, and equal start/end times mean all day. An expiration date includes that entire local calendar day. Disabled, blank and expired messages do not appear. Message board mode falls back to the clock when no messages are active; Daily board does not reserve empty message rows. Messages save automatically in this browser only.
+
+Search for a city in Settings and select a result to set the weather location and timezone together. City search uses Open-Meteo geocoding; manual coordinates, location labels, and timezone fields are not exposed in the simplified panel. Your current city is shown above the search. Existing saved locations remain unchanged until you select another city. Under **Sports leagues**, check one, two, all, or none. Pick favorite teams separately for each selected league, or enter ESPN abbreviations separated by commas if the team service is unavailable. Favorites are retained when a league is disabled. Existing single-league preferences are migrated automatically, including previously disabled sports. Settings are per browser and device; Chrome kiosk mode uses its own persistent profile.
+
+## Sport-specific detail cards
+
+**Favorites only** in Settings limits every league to its saved favorite teams. With no matching games (or no favorites selected for that league), the section quietly reads **NO FAVORITE GAMES**; unrelated games are never substituted. This filters the current scoreboard and does not look up future schedules. Favorites remain saved per league when disabled or after restarting this browser; the kiosk profile stores its own preferences.
+
+**Essential game details only** is enabled by default: score, clock/status and live situation cards stay, while extra game statistics and last-play descriptions are excluded. Turn it off to restore the full game-detail rotation described below. Favorites-only filtering is off by default to preserve existing game visibility.
+
+The existing three-row league sections rotate available information automatically:
+
+- **NFL / CFB**: quarter/clock, down and yards to go, field position, possession, red zone, timeouts, last play, and available team game statistics.
+- **MLB**: inning/status, balls/strikes, outs, occupied bases, current batter/pitcher, pitcher statistics (including pitch count when supplied), last-pitch speed/type when supplied, last play, and team statistics.
+- **NBA / college basketball**: period/clock and available team statistics such as shooting, rebounds, assists, turnovers and fouls, plus last play.
+- **NHL**: period/clock, available power-play/penalty-shot and skater-strength indicators, shots, saves and other team statistics, plus last play.
+- **All leagues**: only game-relevant details and team game statistics are shown. Records, rankings, season statistics, leaders, scoring breakdowns, probable players, venue, TV networks, series summaries and decorative event notes are omitted. Pregame cards show the matchup and start time without season-stat rotations.
+
+Missing fields are omitted rather than guessed; zero counts and statistics remain visible. ESPN may not provide every category for every game, particularly before kickoff, after the final whistle, or for smaller college programs. Live-game summaries are fetched with bounded concurrency and a time budget. If extra stats cannot be retrieved, scoreboard data remains visible with an **EXTRA STATS UNAVAILABLE** detail card. Long stat rotations can take several visits, especially with a large slate.
+
+## Quality notes and known limitations
+
+- First-version mechanical flap simulation: uses 3D CSS and short character-cycling animations, not full physical-dynamics modeling.
+- The scoreboard shows one game at a time and rotates through all returned games. Large college slates may take several minutes to cycle.
+- The CFB scoreboard requests the FBS group, including unranked teams, rather than ESPN's default ranked-team slate.
+- Third-party score feeds may have delays or disappear, especially outside a league's season; ESPN has not provided a formal stable API contract for this endpoint.
+- Weather data is not suitable for safety-critical decisions.
+- Board animation can be computationally demanding on low-power devices; use a fast browser / lower resolution if needed.
+- A 24-column board is inherently compact; on small phone screens the complete board fits but text is small. Landscape or a dedicated monitor is recommended.
+
+## Production build
+
+```powershell
+npm run typecheck
+npm run build
+npm start
+```
+
+Production output is stored in `.next-production`, separate from the development server's `.next` directory. The Windows launcher rebuilds on each fresh server start so code changes are included.
+
+For development checks, use `npm run typecheck` and `npm test`. The tests use Node's built-in TypeScript stripping and require **Node.js 22.6 or later**; running the application still supports Node.js 20.9 or later.
+
+## Files
+
+- `app/page.tsx`: dashboard, data refresh, smart row formatting, sound
+- `components/Flap.tsx`: individual 3D flap
+- `components/Board.tsx`: 24 x 12 grid
+- `components/SettingsPanel.tsx`: settings interface
+- `app/api/weather/route.ts`: weather server route
+- `app/api/scores/route.ts`: sports server route
+- `app/globals.css`: airport-industrial board design
+
+Weather data by [Open-Meteo](https://open-meteo.com/). Sports data provided by ESPN's publicly accessible scoreboard endpoints; not affiliated with ESPN.
