@@ -228,22 +228,21 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   body { padding: max(5px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left)); }
   .app {
     height: calc(100dvh - max(5px,env(safe-area-inset-top)) - max(5px,env(safe-area-inset-bottom)));
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
+    overflow: hidden;
     border-width: 4px;
     padding: 10px 8px;
     gap: 12px;
     border-radius: 16px;
   }
   .app.settings-open { overflow: hidden; }
-  .instrument-face { flex: 1 0 auto; gap: 12px; }
+  .instrument-face { flex: 1; gap: 12px; }
   .identity { padding: 8px 0; }
   .brandmark svg { width: 150px; }
-  .display-area { flex: none; container-type: inline-size; }
-  .board-stage { width: 100%; min-height: var(--readable-board-height); }
-  .flap { font-size: clamp(11px,calc(88cqw / var(--board-columns)),24px); }
-  .clock-row .flap { font-size: clamp(12px,calc(98cqw / var(--board-columns)),28px); }
+  .display-area { flex: 1; container-type: size; }
+  .board-stage { width: var(--fit-width); min-height: 0; }
   .topbar { order: -1; position: sticky; top: 0; z-index: 10; padding: 4px; background: #20251df5; border: 1px solid #a3947033; border-radius: 6px; }
+  .display-idle .topbar { opacity: 0; pointer-events: none; }
+  .display-idle .topbar:has(button:focus-visible) { opacity: 1; pointer-events: auto; }
   .actions { width: 100%; gap: 4px; }
   .actions button { flex: 1; flex-direction: column; gap: 4px; min-width: 0; min-height: 48px; padding: 6px 3px; font-size: 8px; letter-spacing: .5px; }
   .actions button span { display: inline; }

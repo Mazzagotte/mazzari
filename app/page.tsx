@@ -62,7 +62,7 @@ export default function Home() {
       document.removeEventListener("pointerdown", reveal);
       document.removeEventListener("keydown", reveal);
     };
-  }, []);
+  }, [panel]);
 
   useEffect(() => {
     try {
@@ -337,9 +337,8 @@ export default function Home() {
   const rowCount=layout.lines.length;
   const clockVisible=settings.displayMode!=="messages"||!message;
   const aspectRatio=1.75*12*(layout.columns/24)/(rowCount+(clockVisible ? .35 : 0));
-  const stageStyle:CSSProperties & {"--fit-width":string;"--readable-board-height":string}={
+  const stageStyle:CSSProperties & {"--fit-width":string}={
     aspectRatio,"--fit-width":`min(100cqw, ${aspectRatio * 100}cqh, 1800px)`,
-    "--readable-board-height":`${(rowCount+(clockVisible ? .35 : 0))*30+12}px`,
   };
   const describeFeed = (name:string, state:string, updated:number|null) =>
     `${name}: ${state}${updated && state !== "OFF" ? ` (${safeTime(new Date(updated), settings.timezone, {hour:"numeric", minute:"2-digit"})})` : ""}`;

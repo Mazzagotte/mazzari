@@ -64,7 +64,7 @@ export function SettingsPanel({settings,onChange,onClose,awakeStatus,onRetryAwak
  <label className="check"><input type="checkbox" checked={settings.showWeather} onChange={e=>update("showWeather",e.target.checked)}/>Current weather</label><label className="check"><input type="checkbox" checked={settings.showForecast} onChange={e=>update("showForecast",e.target.checked)}/>Today's forecast</label>
  </div></details>
  <details className="settings-section"><summary>Sports<span>{settings.leagues.length?settings.leagues.map(leagueLabel).join(" / "):"No leagues selected"}</span></summary><div className="settings-section-body">
- <p className="hint">Each league gets its own section. Phones scroll longer boards to keep rows readable; tablets and larger screens fit all sections together.</p>
+ <p className="hint">Each league gets its own section. The complete board fits your screen without scrolling. More leagues mean smaller lettering, especially on phones.</p>
  <div className="league-options">{LEAGUE_IDS.map(league=><label className="check" key={league}><input type="checkbox" checked={settings.leagues.includes(league)} onChange={e=>update("leagues",LEAGUE_IDS.filter(id=>id===league?e.target.checked:settings.leagues.includes(id)))}/>{LEAGUES[league].name}</label>)}</div>
  <div className="two"><button className="reset" onClick={()=>update("leagues",[...LEAGUE_IDS])}>All leagues</button><button className="reset" onClick={()=>update("leagues",[])}>No sports</button></div>
  {settings.displayMode!=="daily"&&<p className="hint">Sports are paused in this display mode. Your selections stay saved.</p>}

@@ -10,7 +10,7 @@ Subtle champagne rules separate the clock, combined current-weather/forecast sec
 
 The physical grid uses only as many columns as the longest line in the current rotation needs, up to 24. All active message pages, game cards and weather alternatives are measured together so columns do not change on every flip. New feed content, settings or message schedules can change the size. Empty rows are removed, and dividers follow their sections. Message wrapping and the Settings preview retain the 24-character maximum.
 
-On phones (and short landscape touch screens), the board uses the available width with a minimum row height rather than shrinking a long board to fit. Scroll vertically to see additional leagues or messages; the labeled touch toolbar stays at the top. Tablets and desktops retain the full-board fit. Touch controls have larger targets, Settings uses 16px form text to avoid focus zoom on iOS, and phone Settings fills the screen with its own scrolling area. Safe-area insets protect notched-screen edges; browser zoom remains enabled. Fullscreen is shown only when the browser supports it.
+On phones, tablets and desktops, the complete board scales to the available width and height without scrolling, including in landscape. More rows mean smaller lettering. The labeled phone toolbar stays at the top and hides after five seconds of inactivity. Tap the display to reveal it again. Hidden controls cannot be accidentally activated, and keyboard-focused controls remain visible. Settings stays open until closed; closing it restarts the toolbar timer. Touch controls have larger targets, Settings uses 16px form text to avoid focus zoom on iOS, and phone Settings fills the screen with its own scrolling area. Safe-area insets protect notched-screen edges; browser zoom remains enabled. Fullscreen is shown only when the browser supports it.
 
 Changed characters start in a gentle left-to-right ripple (18 ms between columns); unchanged cells do not animate. Reduced motion bypasses the ripple and mechanical animation.
 
@@ -81,7 +81,7 @@ To launch FLAP automatically when you sign in to Windows, create a shortcut to `
 - **Audio**: synthesized click sound using the Web Audio API; no sound files required. Browsers typically require clicking the page once to enable audio.
 - **Settings**: saved to your browser `localStorage`; no database, login, account, or API key is needed.
 - **Feed health**: weather and each selected sports league show their own status and last successful update time. Failed refreshes retain the last successful data and mark it **STALE**; data older than five minutes is also stale. **OFFLINE** means no successful data is available. The header reports **DEGRADED** if any enabled feed is stale or offline, **CONNECTING** while loading, and **LOCAL** when weather and sports are disabled.
-- **Display**: tablets and desktops fit the complete board within the available viewport. Phones prioritize readable rows and allow vertical scrolling for longer boards. Longer weather descriptions and game details wrap into 24-character pages rather than dropping their remaining words. Detail pages rotate every 10 seconds while the matchup/score stays visible. The game clock/status repeats between detail cards. Each game gets 20 seconds per visit, with additional cards appearing on subsequent visits so other games are not starved.
+- **Display**: all screen sizes fit the complete board within the available viewport without scrolling. Longer weather descriptions and game details wrap into 24-character pages rather than dropping their remaining words. Detail pages rotate every 10 seconds while the matchup/score stays visible. The game clock/status repeats between detail cards. Each game gets 20 seconds per visit, with additional cards appearing on subsequent visits so other games are not starved.
 - **Accessibility**: enable reduced motion in Settings to disable mechanical animation and click sounds; the operating system's reduced-motion preference is also respected. Quiet hours mute sounds according to the board's selected timezone, including overnight schedules. Matching start and end times mute all day.
 
 ## Configuration notes
@@ -124,7 +124,7 @@ Missing fields are omitted rather than guessed; supplied zero counts and timeout
 - Third-party score feeds may have delays or disappear, especially outside a league's season; ESPN has not provided a formal stable API contract for this endpoint.
 - Weather data is not suitable for safety-critical decisions.
 - Board animation can be computationally demanding on low-power devices; use a fast browser / lower resolution if needed.
-- A 24-column line is inherently compact on the smallest phones. Phone rows maintain a minimum height and allow vertical scrolling rather than squeezing all leagues into one screen; a tablet or dedicated monitor remains best for viewing every section at once.
+- A 24-column line is inherently compact on the smallest phones. The board scales down to fit every selected section; fewer leagues or a larger screen improve readability.
 
 ## Production build
 
