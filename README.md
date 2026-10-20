@@ -120,6 +120,35 @@ Missing fields are omitted rather than guessed; zero counts and statistics remai
 
 ## Production build
 
+### Cloudflare Workers and GitHub
+
+The cloud deployment uses OpenNext on Cloudflare Workers, with the private GitHub repository as its source. The Worker name is `mazzari`; its custom domain is `https://mazzagotte.dev`. Cloudflare manages the domain's HTTPS certificate. Browser settings remain local to each origin: use Backup & Restore to transfer preferences from localhost to the HTTPS site. Publishing the application does not publish your browser's saved messages.
+
+Cloudflare Workers Builds configuration (repository root):
+
+- Production branch: `main`
+- Build command: `npm run build:worker`
+- Deploy command: `npm run deploy:worker`
+- Node.js: 22.19.0, selected by `.node-version`
+- R2 bucket: `mazzari-cache`, private, bound as `NEXT_INC_CACHE_R2_BUCKET`
+- Revalidation queue: SQLite Durable Object `DOQueueHandler`, configured in `wrangler.jsonc`
+
+Push changes to `main` to trigger the connected build. The build wrapper selects OpenNext's required `.next` output without changing the Windows launcher's `.next-production` output. Do not run the cloud build beside an active `npm run dev` in the same directory: they both use `.next`. Use Cloudflare's Linux build environment or a separate checkout. Windows OpenNext builds are best-effort; the standard local launcher remains supported.
+
+For a separate checkout:
+
+```powershell
+npm ci
+npm test
+npm run build:worker
+npm run check:worker
+npm run preview:worker
+```
+
+Manual cloud deployment requires `npx wrangler login`, then `npm run deploy:worker` after building. The deploy command also populates the R2 cache with pre-rendered content. Never commit API tokens, Wrangler credentials, `.dev.vars`, or build output. The ignored `.wrangler` directory holds local emulator state. Dependency overrides keep the adapter's transitive Glob and Next.js's PostCSS on patched compatible releases; the lockfile pins the verified graph.
+
+No Workers plan upgrade is required by this configuration. Free-tier request/CPU/build quotas still apply; R2 has a free allowance and usage billing beyond it. Monitor usage in Cloudflare, especially for a public display polling sports feeds. Each viewer gets their own local preferences; this is not a remotely managed shared-message service.
+
 ```powershell
 npm run typecheck
 npm run build
