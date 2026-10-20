@@ -51,9 +51,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   letter-spacing: 1.4px;
   flex-shrink: 0;
 }
-.identity { text-align: center; flex-shrink: 0; padding: 0 80px 10px; }
+.identity { height: 57px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-shrink: 0; padding: 0 80px; }
 .instrument-face { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; background: linear-gradient(115deg, #2b3025, var(--case) 35%, #1b211a); border-radius: 5px; transition: filter 2s ease; }
-.brandmark svg { width: clamp(150px,18vw,220px); height: auto; display: block; margin: auto; }
+.brandmark svg { width: clamp(110px,13vw,160px); height: auto; display: block; margin: auto; }
 .clock-row .flap { font-size: var(--clock-font,3.35cqw); }
 .brandmark { margin: 0; font-family: "Century Gothic", "Trebuchet MS", Arial, sans-serif; font-size: 30px; font-weight: 500; letter-spacing: 5px; padding-left: 5px; color: #ece5ce; }
 .model-number { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 5px; color: var(--brass); font-size: 10px; letter-spacing: 2px; }
@@ -180,7 +180,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (max-width: 650px) {
   body { padding: 5px; }
   .app { height: calc(100dvh - 10px); border-width: 7px; padding: 14px 12px 12px; gap: 8px; border-radius: 18px; }
-  .identity { padding: 18px 0 4px; }
+  .identity { height: 60px; padding: 0; }
   .maker-line { top: 14px; left: 12px; right: 12px; font-size: 7px; }
   .brandmark { font-size: 25px; letter-spacing: 4px; }
   .company-name { font-size: 7px; letter-spacing: 1px; }
@@ -193,7 +193,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 @media (max-height: 600px) {
   .app { padding-top: 10px; padding-bottom: 10px; gap: 6px; }
-  .identity { padding: 0 65px; }
+  .identity { height: 48px; padding: 0 65px; }
   .brandmark { font-size: 22px; }
   .model-number { margin-top: 3px; font-size: 11px; }
   .company-name { margin-top: 5px; font-size: 8px; }
@@ -204,7 +204,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .maker-footer span:last-child { font-size: 7px; }
 }
 @media (max-width: 650px) and (max-height: 600px) {
-  .identity { padding: 13px 0 0; }
+  .identity { height: 50px; padding: 0; }
 }
 @media (pointer: coarse), (max-width: 650px) {
   button, summary, input, select, textarea { touch-action: manipulation; }
@@ -237,7 +237,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .app.settings-open { overflow: hidden; }
   .instrument-face { flex: 1; gap: 12px; }
   .identity { padding: 8px 0; }
-  .brandmark svg { width: 150px; }
+  .brandmark svg { width: 120px; }
   .display-area { flex: 1; container-type: size; }
   .board-stage { width: var(--fit-width); min-height: 0; }
   .topbar { order: -1; position: sticky; top: 0; z-index: 10; padding: 4px; background: #20251df5; border: 1px solid #a3947033; border-radius: 6px; }
