@@ -6,7 +6,7 @@ import {DisplaySettings,MessageSettings} from "./MessageSettings";
 import Image from "next/image";
 import {MakerWordmark} from "./MakerWordmark";
 import {SettingsBackup} from "./SettingsBackup";
-export function SettingsPanel({settings,onChange,onClose,awakeStatus,onRetryAwake}:{settings:Settings;onChange:(next:Settings)=>void;onClose:()=>void;awakeStatus:string;onRetryAwake:()=>void}){
+export function SettingsPanel({settings,onChange,onEnableSound,onClose,awakeStatus,onRetryAwake}:{settings:Settings;onChange:(next:Settings)=>void;onEnableSound:()=>void;onClose:()=>void;awakeStatus:string;onRetryAwake:()=>void}){
  const update=<K extends keyof Settings>(key:K,value:Settings[K])=>onChange({...settings,[key]:value});
  const [query,setQuery]=useState(""),[cities,setCities]=useState<{id:number;label:string;lat:number;lon:number;timezone?:string}[]>([]);
  const [searching,setSearching]=useState(false),[error,setError]=useState(""),[searched,setSearched]=useState(false);
@@ -88,7 +88,7 @@ export function SettingsPanel({settings,onChange,onClose,awakeStatus,onRetryAwak
  </>}
  <label className="check"><input type="checkbox" checked={settings.keepAwake} onChange={e=>update("keepAwake",e.target.checked)}/>Keep screen awake</label>
  {settings.keepAwake&&<><p className="hint" role="status">{awakeStatus}</p><button className="reset" onClick={onRetryAwake}>Retry screen awake</button><p className="hint">Requires a supported browser and a visible display. Power-saving settings may override it. This does not prevent screen burn-in.</p></>}
- <h3>SOUND & MOTION</h3><label className="check"><input type="checkbox" checked={settings.sound} onChange={e=>update("sound",e.target.checked)}/>Mechanical sound</label>
+ <h3>SOUND & MOTION</h3><label className="check"><input type="checkbox" checked={settings.sound} onChange={e=>{if(e.target.checked)onEnableSound();update("sound",e.target.checked)}}/>Mechanical sound</label>
  <label className="check"><input type="checkbox" checked={settings.reducedMotion} onChange={e=>update("reducedMotion",e.target.checked)}/>Reduced motion</label><p className="hint">System reduced-motion preferences are also respected. Reduced motion disables flap animation and click sounds.</p>
  <label className="check"><input type="checkbox" checked={settings.quietHours} onChange={e=>update("quietHours",e.target.checked)}/>Quiet hours</label>
  {settings.quietHours&&<><div className="two"><label>Quiet start<input type="time" required value={settings.quietStart} onChange={e=>{if(e.target.value)update("quietStart",e.target.value)}}/></label><label>Quiet end<input type="time" required value={settings.quietEnd} onChange={e=>{if(e.target.value)update("quietEnd",e.target.value)}}/></label></div><p className="hint">Uses the selected board timezone. Equal start and end times mute all day.</p></>}

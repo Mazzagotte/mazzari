@@ -263,8 +263,8 @@ export default function Home() {
     if(!clickBuffer.current)clickBuffer.current=createClickBuffer(ctx);
     playMechanicalClick(ctx,clickBuffer.current,s.volume);
   }, []);
-  const unlockAudio = () => {
-    if (!settings.sound) return;
+  const unlockAudio = (enablingSound = false) => {
+    if (!settings.sound && !enablingSound) return;
     try {
       if (!audio.current) audio.current = new AudioContext();
       void audio.current.resume().catch(error => {console.error(error); setNotice("Audio could not be enabled.");});
@@ -343,7 +343,7 @@ export default function Home() {
   const describeFeed = (name:string, state:string, updated:number|null) =>
     `${name}: ${state}${updated && state !== "OFF" ? ` (${safeTime(new Date(updated), settings.timezone, {hour:"numeric", minute:"2-digit"})})` : ""}`;
 
-  return <main className={`app ${controlsVisible || panel ? "" : "display-idle"}${panel?" settings-open":""}`} onPointerDown={unlockAudio}>
+  return <main className={`app ${controlsVisible || panel ? "" : "display-idle"}${panel?" settings-open":""}`} onPointerDown={()=>unlockAudio()}>
     <div className="instrument-face" style={{filter:evening?`brightness(${settings.eveningBrightness})`:undefined}}>
     <header className="identity">
       <Wordmark/>
@@ -366,11 +366,11 @@ export default function Home() {
     <div className="topbar">
       <div className="actions">
         {settings.displayMode==="daily"&&<button title="Refresh information" aria-label="Refresh information" disabled={refreshing} onClick={() => setRefreshId(value => value + 1)}><RefreshCw size={17}/><span>{refreshing ? "SYNCING" : "REFRESH"}</span></button>}
-        <button title="Toggle audio" aria-label="Toggle audio" aria-pressed={settings.sound} onClick={() => setSettings(s => ({...s, sound:!s.sound}))}>{settings.sound ? <Volume2 size={18}/> : <VolumeX size={18}/>}<span>SOUND</span></button>
+        <button title="Toggle audio" aria-label="Toggle audio" aria-pressed={settings.sound} onClick={() => {if(!settings.sound)unlockAudio(true);setSettings(s => ({...s, sound:!s.sound}))}}>{settings.sound ? <Volume2 size={18}/> : <VolumeX size={18}/>}<span>SOUND</span></button>
         {canFullscreen&&<button title="Fullscreen" aria-label={fullscreen?"Exit fullscreen":"Fullscreen"} onClick={() => void toggleFull()}>{fullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}<span>FULLSCREEN</span></button>}
         <button className="settings-button" title="Settings" aria-label="Settings" onClick={() => setPanel(true)}><Settings2 size={18}/><span>SETTINGS</span></button>
       </div>
     </div>
-    {panel && <SettingsPanel settings={settings} onChange={setSettings} onClose={()=>setPanel(false)} awakeStatus={awakeStatus} onRetryAwake={()=>setAwakeRetry(value=>value+1)}/>}
+    {panel && <SettingsPanel settings={settings} onChange={setSettings} onEnableSound={()=>unlockAudio(true)} onClose={()=>setPanel(false)} awakeStatus={awakeStatus} onRetryAwake={()=>setAwakeRetry(value=>value+1)}/>}
   </main>;
 }
