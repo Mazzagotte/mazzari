@@ -160,6 +160,8 @@ Cloudflare Workers Builds configuration (repository root):
 - R2 bucket: `mazzari-cache`, private, bound as `NEXT_INC_CACHE_R2_BUCKET`
 - Revalidation queue: SQLite Durable Object `DOQueueHandler`, configured in `wrangler.jsonc`
 
+The app requires Next.js 16.4.2 or a later compatible 16.x release, supported by the OpenNext adapter. Next.js 15 is no longer accepted by OpenNext's support-policy check. After updating dependencies, run `npm ci` to install the versions in the lockfile; do not bypass the check with `--dangerouslyUseUnsupportedNextVersion`.
+
 Push changes to `main` to trigger the connected build. The build wrapper selects OpenNext's required `.next` output without changing the Windows launcher's `.next-production` output. Do not run the cloud build beside an active `npm run dev` in the same directory: they both use `.next`. Use Cloudflare's Linux build environment or a separate checkout. Windows OpenNext builds are best-effort; the standard local launcher remains supported.
 
 For a separate checkout:
