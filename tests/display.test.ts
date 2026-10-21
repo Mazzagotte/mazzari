@@ -5,7 +5,7 @@ import type {Game} from "../lib/display.ts";
 import {DEFAULTS, LEAGUE_IDS, restoreSettings} from "../lib/config.ts";
 import {isGameFeed, isWeather} from "../lib/feeds.ts";
 import {normalizeGame} from "../lib/scores.ts";
-import {boardLayout,boardText} from "../lib/boardLayout.ts";
+import {boardCells,boardLayout,boardText} from "../lib/boardLayout.ts";
 
 test("board uses the longest rotating line rather than padding every row to 24 columns",()=>{
   const rotation=["NEXT OCT 23 6:00 PM","WORLD SERIES GAME 1","DAL BALL / 3RD/4"];
@@ -16,6 +16,13 @@ test("board uses the longest rotating line rather than padding every row to 24 c
   assert.equal(boardLayout(["SHORT"],["THE LONGEST MESSAGE"]).columns,19);
   assert.equal(boardLayout(["A".repeat(30)]).columns,24);
   assert.equal(boardText("NEXT  "), "NEXT");
+});
+
+test("degree temperature units share a single flap cell",()=>{
+  assert.deepEqual(boardCells("72°F"),["7","2","°F"]);
+  assert.deepEqual(boardCells("HIGH 85°F LOW 62°F"),["H","I","G","H"," ","8","5","°F"," ","L","O","W"," ","6","2","°F"]);
+  assert.equal(boardLayout(["72°F"]).columns,3);
+  assert.equal(boardText("72°F"),"72°F");
 });
 
 test("board removes empty rows and remaps section dividers to the visible rows",()=>{

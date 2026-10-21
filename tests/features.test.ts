@@ -6,11 +6,200 @@ import {returnDeadline,applyMessageReturn} from "../lib/messageReturn.ts";
 import {favoriteAwareGames,rememberFinals,restoreFinalCache,scheduleFallbacks,scheduleGames} from "../lib/favoriteGames.ts";
 import {favoriteTeams,gamePages,orderGames,type Game} from "../lib/display.ts";
 import {parseTeams} from "../lib/espnTeams.ts";
+import {drawingLayout,heartDrawing,isDrawing,DRAWING_COLUMNS,DRAWING_ROWS,DRAWING_TEMPLATES,outlinePixels,occasionLines,revealDelay} from "../lib/drawing.ts";
+import {activeSurprise,rotatingCard,scheduleInstant,scheduleInput,type GestureCard} from "../lib/gestureCards.ts";
+import {boardCells} from "../lib/boardLayout.ts";
 
 const now=Date.parse("2026-10-20T18:00:00Z");
 const game=(id:string,state:string,team="NYY",date="2026-10-20T17:00:00Z"):Game=>({
   id,state,date,status:state==="post"?"Final":"Scheduled",
   teams:[{abbr:team,score:"4",homeAway:"away"},{abbr:"SEA",score:"2",homeAway:"home"}],
+});
+
+test("saved cards migrate old settings and round-trip signatures, styles, reveals, dates and schedules",()=>{
+  const drawing={...heartDrawing(),signature:"JAMES",style:"outline",reveal:"center",occasion:{kind:"countdown",date:"2026-12-25",label:"OUR TRIP"}};
+  const settings=restoreSettings({drawing,cards:[{id:"one",name:"Trip",drawing,enabled:true,schedule:{at:now,minutes:15}}],playCards:true});
+  assert.deepEqual(importSettings(exportSettings(settings)),settings);
+  assert.deepEqual(restoreSettings({}).cards,[]);
+  assert.equal(restoreSettings({}).playCards,false);
+  assert.notEqual(settings.cards[0].drawing.pixels,settings.drawing.pixels);
+  assert.notEqual(settings.cards[0].drawing.occasion,settings.drawing.occasion);
+  const card=settings.cards[0];
+  for(const cards of [null,[{...card,name:" "}],[{...card,enabled:"yes"}],[card,card],
+    Array.from({length:21},(_,i)=>({...card,id:String(i)})),[{...card,schedule:{at:now,minutes:0}}],
+    [{...card,schedule:{at:now,minutes:1441}}],[{...card,schedule:{at:now,minutes:1.5}}],
+    [{...card,schedule:{at:8640000000000000,minutes:1}}],[{...card,schedule:{at:"tomorrow",minutes:1}}]]){
+    assert.throws(()=>restoreSettings({cards}));
+  }
+  for(const patch of [{signature:"A".repeat(25)},{style:"red"},{reveal:"flash"},
+    {occasion:{kind:"countdown",date:"2026-02-30",label:"TRIP"}},{occasion:{kind:"bad",date:"2026-12-25",label:"TRIP"}}]){
+    assert.throws(()=>restoreSettings({drawing:{...drawing,...patch}}));
+  }
+});
+
+test("outline rendering preserves source artwork, including thin and edge-touching shapes",()=>{
+  const pixels=["111","111","111"];
+  assert.deepEqual(outlinePixels(pixels),["111","101","111"]);
+  assert.deepEqual(pixels,["111","111","111"]);
+  assert.deepEqual(outlinePixels(["010","010","010"]),["010","010","010"]);
+  const solid=heartDrawing(),outline={...solid,style:"outline" as const,signature:"JAMES"};
+  const rendered=drawingLayout(outline);
+  assert.ok(rendered.pixels.flat().filter(Boolean).length<drawingLayout(solid).pixels.flat().filter(Boolean).length);
+  assert.deepEqual(outline.pixels,solid.pixels);
+  assert.equal(rendered.lines.at(-1)?.trim(),"- JAMES");
+  assert.ok(rendered.lines.every(line=>boardCells(line,32).length<=32));
+});
+
+test("meaningful dates follow local calendar days across timezones, DST and anniversary boundaries",()=>{
+  const countdown={kind:"countdown" as const,date:"2026-03-09",label:"OUR TRIP"};
+  assert.deepEqual(occasionLines(countdown,new Date("2026-03-08T06:00:00Z"),"America/Boise"),["2 DAYS UNTIL","OUR TRIP"]);
+  assert.deepEqual(occasionLines(countdown,new Date("2026-03-09T18:00:00Z"),"America/Boise"),["TODAY IS THE DAY","OUR TRIP"]);
+  assert.deepEqual(occasionLines(countdown,new Date("2026-03-10T18:00:00Z"),"America/Boise"),["1 DAY SINCE","OUR TRIP"]);
+  const anniversary={kind:"anniversary" as const,date:"2023-10-21",label:""};
+  assert.deepEqual(occasionLines(anniversary,new Date("2026-10-21T01:00:00Z"),"America/Boise"),["2 YEARS TOGETHER"]);
+  assert.deepEqual(occasionLines(anniversary,new Date("2026-10-21T01:00:00Z"),"Asia/Tokyo"),["3 YEARS TOGETHER"]);
+  assert.deepEqual(occasionLines({...anniversary,date:"2024-02-29"},new Date("2025-02-28T12:00:00Z"),"UTC"),["0 YEARS TOGETHER"]);
+  assert.deepEqual(occasionLines({...anniversary,date:"2024-02-29"},new Date("2025-03-01T12:00:00Z"),"UTC"),["1 YEAR TOGETHER"]);
+  assert.deepEqual(occasionLines({...anniversary,date:"2027-10-21"},new Date("2027-10-20T12:00:00Z"),"UTC"),["1 DAY UNTIL"]);
+});
+
+test("one-time surprises have inclusive starts, exclusive ends, deterministic overlaps and no replay",()=>{
+  const card=(id:string,at:number,minutes=15):GestureCard=>({id,name:id,enabled:false,drawing:heartDrawing(),schedule:{at,minutes}});
+  const first=card("first",now),later=card("later",now+60000,1);
+  assert.equal(activeSurprise([first],now-1),undefined);
+  assert.equal(activeSurprise([first],now),first);
+  assert.equal(activeSurprise([first],now+900000),undefined);
+  assert.equal(activeSurprise([first,later],now+60000),later);
+  assert.equal(activeSurprise([first,later],now+120000),first);
+  assert.equal(activeSurprise([first,later],now+900000),undefined);
+  assert.equal(activeSurprise([card("b",now),card("a",now)],now)?.id,"a");
+  const restored=importSettings(exportSettings(restoreSettings({cards:[first],displayMode:"clock"})));
+  assert.equal(activeSurprise(restored.cards,now+60000)?.id,"first");
+  assert.equal(restored.displayMode,"clock");
+  assert.equal(activeSurprise(restored.cards,now+900000),undefined);
+  assert.equal(activeSurprise([{...first,schedule:null}],now),undefined);
+  assert.equal(rotatingCard([first],0),undefined);
+  const selected=[{...first,enabled:true},{...later,enabled:true}];
+  assert.equal(rotatingCard(selected,0)?.id,"first");
+  assert.equal(rotatingCard(selected,1)?.id,"first");
+  assert.equal(rotatingCard(selected,2)?.id,"later");
+  assert.equal(rotatingCard(selected,4)?.id,"first");
+});
+
+test("surprise time input resolves city wall time and rejects nonexistent DST times",()=>{
+  assert.equal(scheduleInstant("2026-10-21T07:00","America/Boise"),Date.parse("2026-10-21T13:00:00Z"));
+  assert.equal(scheduleInput(Date.parse("2026-10-21T13:00:00Z"),"America/Boise"),"2026-10-21T07:00");
+  assert.equal(scheduleInstant("2026-11-01T01:30","America/Boise"),Date.parse("2026-11-01T07:30:00Z"));
+  for(const input of ["","2026-02-30T07:00","2026-03-08T02:30","2026-10-21T25:00"]){
+    assert.throws(()=>scheduleInstant(input,"America/Boise"));
+  }
+});
+
+test("reveals are brief, directional and put outlines before filled interiors",()=>{
+  const pixels=Array(20).fill("1".repeat(32));
+  assert.equal(revealDelay("sweep",0,0,pixels),0);
+  assert.equal(revealDelay("sweep",0,31,pixels),744);
+  assert.ok(revealDelay("center",10,16,pixels)<revealDelay("center",0,0,pixels));
+  assert.ok(revealDelay("outline",0,10,pixels)<revealDelay("outline",10,10,pixels));
+  for(const reveal of ["sweep","center","outline"] as const){
+    for(let r=0;r<26;r++)for(let c=0;c<32;c++)assert.ok(revealDelay(reveal,r,c,pixels)<2000);
+  }
+});
+
+test("drawing defaults migrate old preferences and validate saved artwork",()=>{
+  const drawing=heartDrawing();
+  assert.ok(isDrawing(drawing));
+  assert.equal(drawing.pixels.length,DRAWING_ROWS);
+  assert.ok(drawing.pixels.every(row=>row.length===DRAWING_COLUMNS));
+  assert.deepEqual(restoreSettings({}).drawing,drawing);
+  assert.notEqual(restoreSettings({}).drawing.pixels,DEFAULTS.drawing.pixels);
+  const settings=restoreSettings({drawing,displayMode:"drawing"});
+  assert.deepEqual(importSettings(exportSettings(settings)),settings);
+  const legacy=JSON.parse(exportSettings(DEFAULTS));
+  delete legacy.settings.drawing;
+  assert.deepEqual(importSettings(JSON.stringify(legacy)).drawing,drawing);
+  for(const invalid of [null,{}, {...drawing,pixels:[]},{...drawing,pixels:["1".repeat(16)]},
+    {...drawing,pixels:Array(10).fill("x".repeat(16))},{...drawing,caption:"A".repeat(25)},{...drawing,caption:3}]){
+    assert.equal(isDrawing(invalid),false);
+    assert.throws(()=>restoreSettings({drawing:invalid}));
+  }
+});
+
+test("drawing layout preserves blank rows, columns and centered captions without cropping art",()=>{
+  const heart=heartDrawing();
+  const layout=drawingLayout(heart);
+  assert.equal(layout.columns,32);
+  assert.equal(layout.lines.length,20);
+  assert.ok(layout.lines.every(row=>row===" ".repeat(32)));
+  assert.ok(layout.pixels.every(row=>row.length===32));
+  assert.equal(layout.pixels.flat().filter(Boolean).length,heart.pixels.join("").replaceAll("0","").length);
+  const captioned=drawingLayout({...heart,caption:"LOVE YOU"});
+  assert.equal(captioned.lines.length,22);
+  assert.equal(captioned.lines[21],"            LOVE YOU");
+  const wide=drawingLayout({...heart,caption:"A".repeat(24)});
+  assert.equal(wide.columns,32);
+  assert.deepEqual(boardCells(wide.lines[21],32),[..."    "+"A".repeat(24)]);
+  assert.deepEqual(wide.pixels,layout.pixels);
+  assert.equal(wide.pixels.flat().filter(Boolean).length,layout.pixels.flat().filter(Boolean).length);
+  assert.deepEqual(boardCells(drawingLayout({...heart,caption:"72°F"}).lines[21],32).slice(-3),["7","2","°F"]);
+  const empty=drawingLayout({...heart,pixels:Array(20).fill("0".repeat(32))});
+  assert.equal(empty.lines.length,20);
+  assert.equal(empty.pixels.flat().some(Boolean),false);
+});
+
+test("heart template has symmetric rounded lobes and a centered narrow tip",()=>{
+  const {pixels}=heartDrawing();
+  assert.ok(pixels.every(row=>row===[...row].reverse().join("")));
+  const filled=pixels.filter(row=>row.includes("1"));
+  assert.equal(filled.at(-1)?.replaceAll("0","").length,2);
+  assert.ok(filled.some(row=>/1+0+1+/.test(row)));
+  assert.ok(Math.max(...filled.map(row=>row.replaceAll("0","").length))>=24);
+});
+
+test("legacy 16 by 10 drawings migrate without losing pixels, caption, or timer",()=>{
+  const pixels=Array.from({length:10},(_,r)=>Array.from({length:16},(_,c)=>(r+c)%3===0?"1":"0").join(""));
+  const drawing={pixels,caption:"MY OLD DRAWING"};
+  assert.ok(isDrawing(drawing));
+  const backup=JSON.stringify({app:"mazzari",version:1,settings:{...DEFAULTS,drawing,displayMode:"drawing",returnToDailyAt:now+1800000}});
+  const settings=importSettings(backup);
+  assert.equal(settings.drawing.pixels.length,20);
+  assert.equal(settings.drawing.caption,drawing.caption);
+  assert.equal(settings.returnToDailyAt,now+1800000);
+  for(let r=0;r<20;r++)for(let c=0;c<32;c++){
+    assert.equal(settings.drawing.pixels[r][c],pixels[Math.floor(r/2)][Math.floor(c/2)]);
+  }
+  assert.deepEqual(importSettings(exportSettings(settings)),settings);
+  for(const invalid of [Array(20).fill("0".repeat(16)),Array(10).fill("0".repeat(32)),Array(19).fill("0".repeat(32))]){
+    assert.throws(()=>restoreSettings({drawing:{pixels:invalid,caption:""}}));
+  }
+});
+
+test("drawing templates are distinct editable grids that preserve captions and round-trip in backups",()=>{
+  assert.deepEqual(DRAWING_TEMPLATES.map(template=>template.id),
+    ["heart","smiley","star","flower","butterfly","coffee","letter","cat"]);
+  assert.equal(new Set(DRAWING_TEMPLATES.map(template=>template.pixels.join(""))).size,DRAWING_TEMPLATES.length);
+  for(const template of DRAWING_TEMPLATES){
+    const drawing={pixels:[...template.pixels],caption:"THINKING OF YOU"};
+    assert.ok(isDrawing(drawing),template.label);
+    assert.ok(drawing.pixels.join("").includes("1"),template.label);
+    const settings=restoreSettings({drawing,displayMode:"drawing"});
+    assert.deepEqual(importSettings(exportSettings(settings)).drawing,drawing);
+    drawing.pixels[0]=(drawing.pixels[0][0]==="1"?"0":"1")+drawing.pixels[0].slice(1);
+    assert.notEqual(drawing.pixels[0],template.pixels[0]);
+    assert.equal(drawing.caption,"THINKING OF YOU");
+  }
+  assert.deepEqual(DRAWING_TEMPLATES[0].pixels,heartDrawing().pixels);
+});
+
+test("drawing timed return survives backups and preserves the artwork at the deadline",()=>{
+  const settings=restoreSettings({displayMode:"drawing",drawing:{...heartDrawing(),caption:"LOVE YOU"},returnToDailyAt:now});
+  const restored=importSettings(exportSettings(settings));
+  assert.equal(applyMessageReturn(restored,now-1),restored);
+  const returned=applyMessageReturn(restored,now);
+  assert.equal(returned.displayMode,"daily");
+  assert.equal(returned.returnToDailyAt,0);
+  assert.deepEqual(returned.drawing,settings.drawing);
+  assert.equal(applyMessageReturn({...restored,returnToDailyAt:0},now).displayMode,"drawing");
 });
 
 test("backup round-trips every preference, message, timer, and per-league favorite",()=>{

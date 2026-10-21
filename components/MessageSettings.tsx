@@ -9,9 +9,9 @@ export function DisplaySettings({settings,onChange}:{settings:Settings;onChange:
   return <>
     <label>Display mode<select value={settings.displayMode} onChange={e=>{
       const mode=e.target.value;
-      if(mode==="daily"||mode==="messages"||mode==="clock"){setReturnError("");onChange({...settings,displayMode:mode,returnToDailyAt:0});}
-    }}><option value="daily">Daily board</option><option value="messages">Message board</option><option value="clock">Clock only</option></select></label>
-    {settings.displayMode==="messages"&&<>
+      if(mode==="daily"||mode==="messages"||mode==="clock"||mode==="drawing"){setReturnError("");onChange({...settings,displayMode:mode,returnToDailyAt:0});}
+    }}><option value="daily">Daily board</option><option value="messages">Message board</option><option value="clock">Clock only</option><option value="drawing">Drawing board</option></select></label>
+    {(settings.displayMode==="messages"||settings.displayMode==="drawing")&&<>
       <label>Return to Daily board<select value={settings.returnToDailyAt?"scheduled":"never"} onChange={e=>{
         const choice=e.target.value;
         setReturnError("");
@@ -20,15 +20,15 @@ export function DisplaySettings({settings,onChange}:{settings:Settings;onChange:
         try{onChange({...settings,returnToDailyAt:returnDeadline(choice,new Date(),settings.timezone)});}
         catch(error){console.error("Could not schedule Daily board return",error);setReturnError("Could not schedule the return. Check your city timezone.");}
       }}>
-        <option value="never">Stay on Message board</option>
+        <option value="never">Stay on {settings.displayMode==="drawing"?"Drawing":"Message"} board</option>
         {settings.returnToDailyAt>0&&<option value="scheduled" disabled>Return scheduled</option>}
         <option value="30m">In 30 minutes</option><option value="2h">In 2 hours</option><option value="morning">Tomorrow at 7 AM</option>
       </select></label>
-      {settings.returnToDailyAt>0&&<p className="hint" role="status">Returns {new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"}).format(new Date(settings.returnToDailyAt))}. This timer survives reloads; messages are not deleted.</p>}
+      {settings.returnToDailyAt>0&&<p className="hint" role="status">Returns {new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"}).format(new Date(settings.returnToDailyAt))}. This timer survives reloads; messages and drawings are not deleted.</p>}
       {returnError&&<p className="hint" role="alert">{returnError}</p>}
     </>}
-    <p className="hint">Daily board shows your clock, selected feeds and active messages. Message board shows messages alone; Clock only hides feeds and messages.</p>
-    <p className="hint">The grid fits the longest line across the active rotation, up to 24 columns. Empty rows are removed. Its width stays steady between cards and adjusts when content changes.</p>
+    <p className="hint">Daily board shows your clock, selected feeds and active messages. Message board shows messages alone; Clock only hides feeds and messages. Drawing board shows the draft or selected saved cards. Scheduled surprises temporarily override any mode, then return to it.</p>
+    <p className="hint">Text modes fit the longest line across the active rotation, up to 24 columns, and remove empty rows. Drawing board preserves the full drawing grid.</p>
   </>;
 }
 

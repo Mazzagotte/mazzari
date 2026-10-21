@@ -16,12 +16,12 @@ export function SettingsBackup({settings,onChange}:{settings:Settings;onChange:(
       link.href=url;link.download=`mazzari-settings-${new Date().toISOString().slice(0,10)}.json`;
       document.body.appendChild(link);link.click();link.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1000);
-      setStatus("Backup download requested. Keep this file private: it includes your messages and location.");
+      setStatus("Backup download requested. Keep this file private: it includes your messages, drawings, scheduled cards and location.");
     }catch(error){console.error("Settings export failed",error);setError("Settings could not be exported.");}
   };
   return <section>
     <h3>BACKUP & RESTORE</h3>
-    <p className="hint">Transfer your city, teams, messages and preferences between browsers, including your separate kiosk profile. Backups contain personal information. Live feeds and saved final scores are not included.</p>
+    <p className="hint">Transfer your city, teams, messages, drawings, saved cards, surprise schedules and preferences between browsers, including your separate kiosk profile. Backups contain personal information. Live feeds and saved final scores are not included.</p>
     <div className="two"><button className="reset" onClick={exportFile}>Export settings</button><button className="reset" disabled={reading} onClick={()=>input.current?.click()}>{reading?"Reading backup...":"Import settings"}</button></div>
     <input ref={input} type="file" accept=".json,application/json" hidden aria-label="Settings backup file" onChange={async e=>{
       const file=e.target.files?.[0];e.target.value="";
@@ -34,7 +34,7 @@ export function SettingsBackup({settings,onChange}:{settings:Settings;onChange:(
       finally{setReading(false);}
     }}/>
     {pending&&<div className="backup-confirm">
-      <p className="hint">Replace this browser&apos;s settings with the backup for {pending.city}? It contains {pending.messages.length} personal messages and {pending.leagues.length} enabled leagues. An expired Message board return timer will return to Daily board immediately.</p>
+      <p className="hint">Replace this browser&apos;s settings with the backup for {pending.city}? It contains {pending.messages.length} personal messages, {pending.cards.length} saved cards, a drawing and {pending.leagues.length} enabled leagues. An expired Message or Drawing board return timer returns to Daily board immediately. Active surprise schedules resume for their remaining duration; expired surprises are not replayed.</p>
       <div className="two"><button className="reset" onClick={()=>{onChange(applyMessageReturn(pending,Date.now()));setPending(null);setStatus("Backup restored in this browser.");}}>Replace settings</button><button className="reset" onClick={()=>setPending(null)}>Cancel import</button></div>
     </div>}
     {error&&<p role="alert" className="hint">{error}</p>}

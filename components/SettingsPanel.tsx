@@ -6,6 +6,8 @@ import {DisplaySettings,MessageSettings} from "./MessageSettings";
 import Image from "next/image";
 import {MakerWordmark} from "./MakerWordmark";
 import {SettingsBackup} from "./SettingsBackup";
+import {DrawingSettings} from "./DrawingSettings";
+import type {ESPNTeam} from "../lib/espnTeams";
 export function SettingsPanel({settings,onChange,onEnableSound,onClose,awakeStatus,onRetryAwake}:{settings:Settings;onChange:(next:Settings)=>void;onEnableSound:()=>void;onClose:()=>void;awakeStatus:string;onRetryAwake:()=>void}){
  const update=<K extends keyof Settings>(key:K,value:Settings[K])=>onChange({...settings,[key]:value});
  const [query,setQuery]=useState(""),[cities,setCities]=useState<{id:number;label:string;lat:number;lon:number;timezone?:string}[]>([]);
@@ -39,7 +41,7 @@ export function SettingsPanel({settings,onChange,onEnableSound,onClose,awakeStat
    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
   }
- }}><header><div className="settings-identity"><Image src="/maker-mark.svg" width={32} height={32} alt=""/><h2 id="settings-title">Settings</h2></div><button aria-label="Close settings" className="icon-btn" onClick={onClose}><X/></button></header>
+ }}><header><div className="settings-identity"><Image src="/mazzari-logo.png" width={32} height={32} alt=""/><h2 id="settings-title">Settings</h2></div><button aria-label="Close settings" className="icon-btn" onClick={onClose}><X/></button></header>
  <p className="settings-save-note">Changes save automatically in this browser.</p>
  <div className="settings-content">
  <details className="settings-section" open><summary>Display<span>Mode, clock &amp; layout</span></summary><div className="settings-section-body">
@@ -78,6 +80,7 @@ export function SettingsPanel({settings,onChange,onEnableSound,onClose,awakeStat
  {settings.leagues.map(league=><LeagueFavorites key={league} league={league} value={settings.favoritesByLeague[league]} onChange={value=>update("favoritesByLeague",{...settings.favoritesByLeague,[league]:value})}/>)}
  </div></details>
  <details className="settings-section"><summary>Personal messages<span>{settings.messages.length?`${settings.messages.length} saved`:"Add a personal touch"}</span></summary><div className="settings-section-body"><MessageSettings settings={settings} onChange={onChange}/></div></details>
+ <details className="settings-section"><summary>Draw a gesture<span>A heart, a sketch, a little surprise</span></summary><div className="settings-section-body"><DrawingSettings settings={settings} onChange={onChange}/></div></details>
  <details className="settings-section"><summary>Screen &amp; sound<span>Evening, motion &amp; audio</span></summary><div className="settings-section-body">
  <h3>EVENING &amp; SCREEN</h3>
  <label className="check"><input type="checkbox" checked={settings.eveningDimming} onChange={e=>update("eveningDimming",e.target.checked)}/>Scheduled evening dimming</label>
@@ -97,7 +100,7 @@ export function SettingsPanel({settings,onChange,onEnableSound,onClose,awakeStat
  </div></details>
  <details className="settings-section"><summary>Backup &amp; reset<span>Transfer or restore preferences</span></summary><div className="settings-section-body">
  <SettingsBackup settings={settings} onChange={onChange}/>
- <div className="settings-reset"><h3>RESET THIS BROWSER</h3><p className="hint">Restoring defaults removes your saved messages, favorite teams and display preferences. Export a backup first if you want to keep them.</p>
+ <div className="settings-reset"><h3>RESET THIS BROWSER</h3><p className="hint">Restoring defaults removes your saved messages, drawing, cards, surprise schedules, favorite teams and display preferences. Export a backup first if you want to keep them.</p>
  {!confirmReset?<button className="reset" onClick={()=>setConfirmReset(true)}>Restore defaults...</button>:<div className="backup-confirm" role="group" aria-label="Confirm restoring defaults"><p className="hint">Replace your settings with the defaults? This cannot be undone without a backup.</p><div className="two"><button className="reset" onClick={()=>{onChange({...DEFAULTS,leagues:[...DEFAULTS.leagues],favoritesByLeague:{...DEFAULTS.favoritesByLeague},messages:[]});setConfirmReset(false)}}>Confirm reset</button><button className="reset" onClick={()=>setConfirmReset(false)}>Cancel reset</button></div></div>}
  </div><p className="hint">Each browser, kiosk profile and website address has separate preferences. No account is required.</p>
  </div></details>
@@ -106,14 +109,15 @@ export function SettingsPanel({settings,onChange,onEnableSound,onClose,awakeStat
 }
 
 function LeagueFavorites({league,value,onChange}:{league:League;value:string;onChange:(value:string)=>void}){
- const [teams,setTeams]=useState<{abbr:string;name:string}[]>([]),[error,setError]=useState("");
+ const [teams,setTeams]=useState<ESPNTeam[]>([]),[error,setError]=useState("");
  const [filter,setFilter]=useState("");
  useEffect(()=>{
   const controller=new AbortController();
   fetch(`/api/teams?league=${league}`,{signal:controller.signal}).then(async response=>{
    if(!response.ok)throw new Error("Team list is unavailable. Enter abbreviations manually.");
    const data=await response.json();
-   if(!Array.isArray(data.teams)||!data.teams.every((team:unknown)=>team!==null&&typeof team==="object"&&"abbr" in team&&typeof team.abbr==="string"&&"name" in team&&typeof team.name==="string"))throw new Error("Invalid team list. Enter abbreviations manually.");
+   if(!Array.isArray(data.teams)||!data.teams.every((team:unknown)=>team!==null&&typeof team==="object"&&"id" in team&&typeof team.id==="string"&&!!team.id&&"abbr" in team&&typeof team.abbr==="string"&&"name" in team&&typeof team.name==="string")||
+    new Set(data.teams.map((team:ESPNTeam)=>team.id)).size!==data.teams.length)throw new Error("Invalid team list. Enter abbreviations manually.");
    setTeams(data.teams);
   }).catch(error=>{if(!controller.signal.aborted){console.error(error);setError(error.message)}});
   return()=>controller.abort();
@@ -124,7 +128,7 @@ function LeagueFavorites({league,value,onChange}:{league:League;value:string;onC
  <p className="hint">Selections stay saved when this league is turned off.</p>
  {!error&&!!teams.length&&<label>Find {leagueLabel(league)} teams<input type="search" placeholder="Team name or abbreviation" value={filter} onChange={e=>setFilter(e.target.value)}/></label>}
  <fieldset className="team-picker"><legend>{LEAGUES[league].name} teams</legend>
- {error?<p role="alert" className="hint">{error}</p>:!teams.length?<p className="hint" role="status">Loading teams...</p>:matches.length?matches.map(team=><label className="check" key={team.abbr}><input type="checkbox" checked={favorites.includes(team.abbr.toUpperCase())} onChange={e=>onChange((e.target.checked?[...favorites,team.abbr.toUpperCase()]:favorites.filter(abbr=>abbr!==team.abbr.toUpperCase())).join(", "))}/>{team.name} ({team.abbr})</label>):<p className="hint" role="status">No teams match your search.</p>}
+ {error?<p role="alert" className="hint">{error}</p>:!teams.length?<p className="hint" role="status">Loading teams...</p>:matches.length?matches.map(team=><label className="check" key={team.id}><input type="checkbox" checked={favorites.includes(team.abbr.toUpperCase())} onChange={e=>onChange((e.target.checked?[...favorites,team.abbr.toUpperCase()]:favorites.filter(abbr=>abbr!==team.abbr.toUpperCase())).join(", "))}/>{team.name} ({team.abbr})</label>):<p className="hint" role="status">No teams match your search.</p>}
  </fieldset>
  <details className="settings-help" open={!!error}><summary>Enter abbreviations manually</summary><label>{leagueLabel(league)} favorite abbreviations<input placeholder="Comma-separated abbreviations" value={value} onChange={e=>onChange(e.target.value.toUpperCase())}/></label><p className="hint">Use ESPN team abbreviations separated by commas. Manual entry is available if the team list cannot load.</p></details></details>;
 }

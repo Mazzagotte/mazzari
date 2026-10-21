@@ -1,7 +1,14 @@
 export const MAX_COLUMNS=24;
 
+export function boardCells(input:string,maxColumns=MAX_COLUMNS):string[] {
+  const normalized=input.toUpperCase().replace(/[^ A-Z0-9:.\-/+!?%°]/g," ");
+  const cells=(normalized.match(/°[FC]|./g)||[]).slice(0,maxColumns);
+  while(cells.at(-1)===" ")cells.pop();
+  return cells;
+}
+
 export function boardText(input:string):string {
-  return input.toUpperCase().replace(/[^ A-Z0-9:.\-/+!?%°]/g," ").slice(0,MAX_COLUMNS).trimEnd();
+  return boardCells(input).join("");
 }
 
 export function boardLayout(lines:string[],rotationLines:string[]=lines,sectionStarts:number[]=[]){
@@ -15,6 +22,6 @@ export function boardLayout(lines:string[],rotationLines:string[]=lines,sectionS
     section=false;
     visible.push(line);
   }
-  const columns=Math.max(1,...[...visible,...rotationLines.map(boardText)].map(line=>line.length));
+  const columns=Math.max(1,...[...visible,...rotationLines].map(line=>boardCells(line).length));
   return {lines:visible,columns,sectionStarts:sections};
 }

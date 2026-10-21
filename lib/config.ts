@@ -1,7 +1,9 @@
 import {isPersonalMessage, type PersonalMessage} from "./messages.ts";
+import {heartDrawing,isDrawing,upgradeDrawing,type Drawing} from "./drawing.ts";
+import {CARD_LIMIT,copyCard,isGestureCard,type GestureCard} from "./gestureCards.ts";
 export type League = "nfl" | "nba" | "mlb" | "nhl" | "ncaaf" | "ncaab";
-export type Settings = {city:string; lat:number; lon:number; timezone:string; unit:"fahrenheit"|"celsius"; time24:boolean; sound:boolean; volume:number; speed:number; leagues:League[]; favoritesByLeague:Record<League,string>; favoritesOnly:boolean; essentialDetails:boolean; showWeather:boolean; showForecast:boolean; showSeconds:boolean; reducedMotion:boolean; quietHours:boolean; quietStart:string; quietEnd:string; displayMode:"daily"|"messages"|"clock"; messages:PersonalMessage[]; eveningDimming:boolean; eveningStart:string; eveningEnd:string; eveningBrightness:number; keepAwake:boolean; returnToDailyAt:number; finalScoreHours:number};
-export const DEFAULTS:Settings = {city:"Boise, Idaho",lat:43.615,lon:-116.2023,timezone:"America/Boise",unit:"fahrenheit",time24:false,sound:false,volume:0.25,speed:85,leagues:["mlb"],favoritesByLeague:{nfl:"",nba:"",mlb:"NYY",nhl:"",ncaaf:"",ncaab:""},favoritesOnly:false,essentialDetails:true,showWeather:true,showForecast:true,showSeconds:false,reducedMotion:false,quietHours:false,quietStart:"22:00",quietEnd:"07:00",displayMode:"daily",messages:[],eveningDimming:false,eveningStart:"21:00",eveningEnd:"07:00",eveningBrightness:0.45,keepAwake:false,returnToDailyAt:0,finalScoreHours:24};
+export type Settings = {city:string; lat:number; lon:number; timezone:string; unit:"fahrenheit"|"celsius"; time24:boolean; sound:boolean; volume:number; speed:number; leagues:League[]; favoritesByLeague:Record<League,string>; favoritesOnly:boolean; essentialDetails:boolean; showWeather:boolean; showForecast:boolean; showSeconds:boolean; reducedMotion:boolean; quietHours:boolean; quietStart:string; quietEnd:string; displayMode:"daily"|"messages"|"clock"|"drawing"; drawing:Drawing; cards:GestureCard[]; playCards:boolean; messages:PersonalMessage[]; eveningDimming:boolean; eveningStart:string; eveningEnd:string; eveningBrightness:number; keepAwake:boolean; returnToDailyAt:number; finalScoreHours:number};
+export const DEFAULTS:Settings = {city:"Boise, Idaho",lat:43.615,lon:-116.2023,timezone:"America/Boise",unit:"fahrenheit",time24:false,sound:false,volume:0.25,speed:85,leagues:["mlb"],favoritesByLeague:{nfl:"",nba:"",mlb:"NYY",nhl:"",ncaaf:"",ncaab:""},favoritesOnly:false,essentialDetails:true,showWeather:true,showForecast:true,showSeconds:false,reducedMotion:false,quietHours:false,quietStart:"22:00",quietEnd:"07:00",displayMode:"daily",drawing:heartDrawing(),cards:[],playCards:false,messages:[],eveningDimming:false,eveningStart:"21:00",eveningEnd:"07:00",eveningBrightness:0.45,keepAwake:false,returnToDailyAt:0,finalScoreHours:24};
 export const LEAGUES:Record<League,{sport:string;code:string;name:string}>={nfl:{sport:"football",code:"nfl",name:"NFL"},nba:{sport:"basketball",code:"nba",name:"NBA"},mlb:{sport:"baseball",code:"mlb",name:"MLB"},nhl:{sport:"hockey",code:"nhl",name:"NHL"},ncaaf:{sport:"football",code:"college-football",name:"College Football (CFB)"},ncaab:{sport:"basketball",code:"mens-college-basketball",name:"College Basketball"}};
 export const LEAGUE_IDS:League[]=["mlb","nfl","ncaaf","nba","nhl","ncaab"];
 export function isLeague(value:unknown):value is League {
@@ -11,9 +13,9 @@ export function leagueLabel(league:League):string {return league==="ncaaf"?"CFB"
 export function restoreSettings(value:unknown):Settings {
  if(!value||typeof value!=="object"||Array.isArray(value))throw new Error("Invalid saved settings");
  const saved:Record<string,unknown>={...value};
- const result={...DEFAULTS,leagues:[...DEFAULTS.leagues],favoritesByLeague:{...DEFAULTS.favoritesByLeague}};
+ const result:Settings={...DEFAULTS,cards:[],drawing:heartDrawing(),leagues:[...DEFAULTS.leagues],favoritesByLeague:{...DEFAULTS.favoritesByLeague}};
  for(const key of Object.keys(DEFAULTS) as (keyof Settings)[]){
-  if(key==="leagues"||key==="favoritesByLeague"||key==="messages")continue;
+  if(key==="leagues"||key==="favoritesByLeague"||key==="messages"||key==="drawing"||key==="cards")continue;
   if(!(key in saved))continue;
   const candidate=saved[key];
   if(typeof candidate!==typeof DEFAULTS[key])throw new Error(`Invalid setting: ${key}`);
@@ -43,7 +45,16 @@ export function restoreSettings(value:unknown):Settings {
    new Set(saved.messages.map(message=>message.id)).size!==saved.messages.length)throw new Error("Invalid personal messages");
   result.messages=saved.messages.map(message=>({...message}));
  }
- if(!["daily","messages","clock"].includes(result.displayMode)||!["fahrenheit","celsius"].includes(result.unit)||
+ if("drawing" in saved){
+  if(!isDrawing(saved.drawing))throw new Error("Invalid drawing");
+  result.drawing=upgradeDrawing(saved.drawing);
+ }
+ if("cards" in saved){
+  if(!Array.isArray(saved.cards)||saved.cards.length>CARD_LIMIT||!saved.cards.every(isGestureCard)||
+    new Set(saved.cards.map(card=>card.id)).size!==saved.cards.length)throw new Error("Invalid gesture cards");
+  result.cards=saved.cards.map(copyCard);
+ }
+ if(!["daily","messages","clock","drawing"].includes(result.displayMode)||!["fahrenheit","celsius"].includes(result.unit)||
   !Number.isFinite(result.lat)||result.lat < -90||result.lat > 90||
   !Number.isFinite(result.lon)||result.lon < -180||result.lon > 180||
   !Number.isFinite(result.volume)||result.volume < 0||result.volume > 1||

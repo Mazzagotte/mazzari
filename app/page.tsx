@@ -7,6 +7,8 @@ import {favoriteTeams,feedStatus, Game, gamePages, isQuietTime, orderGames, page
 import {isGameFeed, isWeather, Weather} from "../lib/feeds";
 import {activeMessages, messagePages, rotatingMessage} from "../lib/messages";
 import {boardLayout} from "../lib/boardLayout";
+import {drawingLayout} from "../lib/drawing";
+import {activeSurprise,rotatingCard} from "../lib/gestureCards";
 import {eveningActive} from "../lib/evening";
 import {createClickBuffer,playMechanicalClick} from "../lib/mechanicalAudio";
 import {Wordmark} from "../components/Wordmark";
@@ -301,7 +303,7 @@ export default function Home() {
   const clockLines=[...lines];
   const rotationLines=[...clockLines];
   const w = weather.data?.current, d = weather.data?.daily;
-  const unit = settings.unit === "fahrenheit" ? "F" : "C";
+  const unit = settings.unit === "fahrenheit" ? "°F" : "°C";
   if(settings.showWeather||settings.showForecast)sectionStarts.push(lines.length);
   if (settings.showWeather) {
     if(w)rotationLines.push(...pages(`${Math.round(w.temperature_2m)}${unit} ${weatherDescription(w.weather_code)}`),
@@ -333,9 +335,14 @@ export default function Home() {
   const messageLines=messages.flatMap(item=>messagePages(item.text).flat());
   const sizingLines=settings.displayMode==="daily"?[...rotationLines,...messageLines]:
     settings.displayMode==="messages"&&message?messageLines:clockLines;
-  const layout=boardLayout(lines,sizingLines,settings.displayMode==="daily"?sectionStarts:[]);
+  const surprise=now?activeSurprise(settings.cards,now.getTime()):undefined;
+  const card=surprise||(settings.displayMode==="drawing"&&settings.playCards?rotatingCard(settings.cards,tick):undefined);
+  const artwork=card?.drawing||settings.drawing;
+  const drawing=surprise||settings.displayMode==="drawing"?drawingLayout(artwork,current,settings.timezone):null;
+  const drawingKey=drawing?`${surprise?"surprise":"drawing"}-${card?.id||"draft"}-${surprise?.schedule?.at||0}`:"text";
+  const layout=drawing||boardLayout(lines,sizingLines,settings.displayMode==="daily"?sectionStarts:[]);
   const rowCount=layout.lines.length;
-  const clockVisible=settings.displayMode!=="messages"||!message;
+  const clockVisible=!drawing&&(settings.displayMode!=="messages"||!message);
   const aspectRatio=1.75*12*(layout.columns/24)/(rowCount+(clockVisible ? .35 : 0));
   const stageStyle:CSSProperties & {"--fit-width":string}={
     aspectRatio,"--fit-width":`min(100cqw, ${aspectRatio * 100}cqh, 1800px)`,
@@ -351,9 +358,9 @@ export default function Home() {
     </header>
     {notice && <div className="notice" role="alert">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss notification">X</button></div>}
     <div className="display-area"><div className="board-stage" style={stageStyle}>
-      <Board lines={layout.lines} columns={layout.columns} speed={settings.speed} onFlip={onFlip} reducedMotion={reducedMotion} sectionStarts={layout.sectionStarts} emphasizeClock={clockVisible}/>
+      <Board key={drawingKey} lines={layout.lines} columns={layout.columns} speed={settings.speed} onFlip={onFlip} reducedMotion={reducedMotion} sectionStarts={layout.sectionStarts} emphasizeClock={clockVisible} pixels={drawing?.pixels} reveal={artwork.reveal} artSource={drawing?.source} description={drawing?`${surprise?"Scheduled surprise":card?.name||"Personal drawing"}${drawing.lines.some(line=>line.trim())?`: ${drawing.lines.map(line=>line.trim()).filter(Boolean).join(" / ")}`:""}`:undefined}/>
     </div></div>
-    {settings.displayMode==="daily"&&<footer className="feed-warnings" role="status">
+    {settings.displayMode==="daily"&&!surprise&&<footer className="feed-warnings" role="status">
       {["STALE","OFFLINE"].includes(weatherState) && <span>{describeFeed("WEATHER", weatherState, weather.updated)}</span>}
       {sportsSections.map((section,index) => ["STALE","OFFLINE"].includes(sportsStates[index]) &&
         <span key={section.league}>{describeFeed(leagueLabel(section.league), sportsStates[index], section.feed.updated)}</span>)}
@@ -365,6 +372,7 @@ export default function Home() {
     </div>
     <div className="topbar">
       <div className="actions">
+        {surprise&&<button onClick={()=>setSettings(s=>({...s,cards:s.cards.map(item=>item.id===surprise.id?{...item,schedule:null}:item)}))}>END SURPRISE</button>}
         {settings.displayMode==="daily"&&<button title="Refresh information" aria-label="Refresh information" disabled={refreshing} onClick={() => setRefreshId(value => value + 1)}><RefreshCw size={17}/><span>{refreshing ? "SYNCING" : "REFRESH"}</span></button>}
         <button title="Toggle audio" aria-label="Toggle audio" aria-pressed={settings.sound} onClick={() => {if(!settings.sound)unlockAudio(true);setSettings(s => ({...s, sound:!s.sound}))}}>{settings.sound ? <Volume2 size={18}/> : <VolumeX size={18}/>}<span>SOUND</span></button>
         {canFullscreen&&<button title="Fullscreen" aria-label={fullscreen?"Exit fullscreen":"Fullscreen"} onClick={() => void toggleFull()}>{fullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}<span>FULLSCREEN</span></button>}
