@@ -88,7 +88,20 @@ textarea:focus-visible {
   min-height: 0;
   background: linear-gradient(115deg, #2b3025, var(--case) 35%, #1b211a);
   border-radius: 5px;
-  transition: filter 2s ease;
+}
+/* Evening dimming: a black overlay fades in instead of a CSS filter, which would re-composite the whole board. */
+.dim-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 2s ease;
+}
+.topbar {
+  position: relative;
+  z-index: 11;
 }
 .brandmark svg {
   width: clamp(110px, 13vw, 160px);
@@ -113,15 +126,19 @@ textarea:focus-visible {
   justify-content: center;
   align-items: center;
   gap: 10px;
-  margin-top: 5px;
+  margin-top: 6px;
   color: var(--brass);
-  font-size: 10px;
-  letter-spacing: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
 }
 .model-number span {
-  width: 20px;
+  width: 34px;
   height: 1px;
-  background: #a3947077;
+  background: linear-gradient(90deg, transparent, #c3b18acc);
+}
+.model-number span:last-child {
+  background: linear-gradient(270deg, transparent, #c3b18acc);
 }
 .company-name {
   color: #b2b19a;
@@ -164,7 +181,14 @@ textarea:focus-visible {
 }
 .actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #a394704d;
+  border-radius: 12px;
+  background: linear-gradient(#2a3024cc, #181e17cc);
+  box-shadow:
+    inset 0 1px 0 #ffffff0f,
+    0 2px 6px #0006;
 }
 .actions button,
 .icon-btn {
@@ -173,20 +197,34 @@ textarea:focus-visible {
   justify-content: center;
   gap: 7px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 7px 10px;
   color: #c3bea1;
-  background: #151c1533;
+  background: transparent;
   font-size: 8px;
   letter-spacing: 1px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.settings header .icon-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  background: #ffffff0d;
+}
+.settings header .icon-btn:hover {
+  background: #ffffff1c;
 }
 .actions .settings-button {
-  border-color: #a3947044;
+  background: #c3b18a1f;
+  border-color: #a3947066;
   color: var(--brass);
 }
 .actions button:hover,
 .icon-btn:hover {
-  background: #2b3028;
+  background: #ffffff14;
   color: #f0e6c6;
 }
 .actions button:disabled {
@@ -237,9 +275,10 @@ textarea:focus-visible {
   max-width: 36%;
 }
 .board {
+  position: relative;
   flex: 1;
   min-height: 0;
-  background: #111710;
+  background: #0f150e;
   padding: 1.1cqw;
   border: 1px solid #50533d;
   border-radius: 7px;
@@ -247,6 +286,14 @@ textarea:focus-visible {
   box-shadow:
     inset 0 3px 9px #0008,
     0 1px 0 #74745b55;
+}
+.board::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: linear-gradient(115deg, #ffffff0a 0%, #ffffff05 28%, transparent 29%, transparent 100%);
 }
 .board-inner {
   height: 100%;
@@ -261,16 +308,17 @@ textarea:focus-visible {
 }
 .flap-row.section-start {
   position: relative;
+  margin-top: 0.45cqw;
 }
 .flap-row.section-start::before {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(-0.19cqw - 0.5px);
+  top: calc(-0.415cqw - 0.5px);
   height: 1px;
-  background: var(--brass);
-  opacity: 0.65;
+  background: linear-gradient(90deg, transparent, var(--brass) 8%, var(--brass) 92%, transparent);
+  opacity: 0.6;
   pointer-events: none;
 }
 .flap {
@@ -290,7 +338,9 @@ textarea:focus-visible {
     inset 0 1px 0 #69705244,
     0 1px 2px #0009;
 }
-.flap-base,
+.flap {
+  contain: layout style;
+}
 .flap-top,
 .flap-bottom,
 .flap-turn {
@@ -301,16 +351,15 @@ textarea:focus-visible {
   justify-content: center;
   overflow: hidden;
 }
-.flap-base,
 .flap-top {
-  background: linear-gradient(#272e22, #22291f);
+  background: linear-gradient(#2d3527, #232a1f 90%, #1e251b);
 }
 .flap-top {
   clip-path: inset(0 0 50%);
 }
 .flap-bottom {
   clip-path: inset(50% 0 0);
-  background: linear-gradient(#1c231a, #192017);
+  background: linear-gradient(#1b2119, #181e16 20%, #161c14);
 }
 .flap-turn {
   clip-path: inset(0 0 50%);
@@ -318,12 +367,11 @@ textarea:focus-visible {
   backface-visibility: hidden;
   background: #242a22;
   z-index: 3;
-  opacity: 0;
-}
-.flap-turn.turning {
+  will-change: transform, opacity;
   animation: flap-turn ease-in both;
 }
-.flap-seam {
+.flap::before {
+  content: "";
   position: absolute;
   top: 50%;
   left: 0;
@@ -333,20 +381,18 @@ textarea:focus-visible {
   box-shadow: 0 1px 0 #61634a44;
   z-index: 4;
 }
-.flap-pin {
+.flap::after {
+  content: "";
   position: absolute;
-  width: 1px;
-  height: 3px;
   top: calc(50% - 1px);
-  background: #797153;
-  z-index: 5;
-  opacity: 0.5;
-}
-.flap-pin.left {
   left: 0;
-}
-.flap-pin.right {
   right: 0;
+  height: 3px;
+  background:
+    linear-gradient(#797153, #797153) left / 1px 3px no-repeat,
+    linear-gradient(#797153, #797153) right / 1px 3px no-repeat;
+  opacity: 0.5;
+  z-index: 5;
 }
 @keyframes flap-turn {
   0% {
@@ -357,6 +403,9 @@ textarea:focus-visible {
     opacity: 0;
     transform: rotateX(-92deg);
   }
+}
+:root[data-hidden="true"] .flap-turn {
+  animation-play-state: paused;
 }
 .bottom {
   order: 3;
@@ -412,9 +461,23 @@ textarea:focus-visible {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .instrument-face {
+  .dim-overlay {
     transition: none;
   }
+}
+:root:fullscreen body {
+  padding: 0;
+}
+:root:fullscreen .app {
+  height: 100dvh;
+  padding: 2.2vh 2.2vw;
+  border: 0;
+  border-radius: 0;
+}
+:root:fullscreen .app::before,
+:root:fullscreen .identity,
+:root:fullscreen .maker-line {
+  display: none;
 }
 @media (hover: none) {
   .display-idle .topbar {
@@ -446,26 +509,50 @@ textarea:focus-visible {
 .settings-shade {
   position: fixed;
   inset: 0;
-  background: #070c08bb;
+  background: #05080acc;
   z-index: 20;
   display: flex;
   justify-content: flex-end;
+  animation: shade-in 180ms ease-out;
 }
 .settings {
+  --panel: #1b2119;
+  --card: #232a21;
+  --field: #141913;
+  --line: #394133;
   height: 100%;
-  width: min(480px, 100%);
+  width: min(500px, 100%);
   min-width: 0;
-  background: var(--case);
-  border-left: 1px solid var(--border);
-  box-shadow: -20px 0 60px #0006;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  border-radius: 18px 0 0 18px;
+  box-shadow: -24px 0 60px #0007;
   display: flex;
   flex-direction: column;
+  animation: panel-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes shade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes panel-in {
+  from {
+    transform: translateX(32px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-shade,
+  .settings {
+    animation: none;
+  }
 }
 .settings header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 12px;
+  padding: 22px 24px 8px;
   flex-shrink: 0;
 }
 .settings header small {
@@ -474,9 +561,10 @@ textarea:focus-visible {
   letter-spacing: 2px;
 }
 .settings h2 {
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 700;
   margin: 0;
-  letter-spacing: 1px;
+  letter-spacing: 0.2px;
 }
 .settings h3 {
   color: var(--brass);
@@ -485,71 +573,124 @@ textarea:focus-visible {
   letter-spacing: 2px;
 }
 .settings-content {
-  padding: 4px 20px 24px;
+  padding: 8px 20px 28px;
   overflow: auto;
   min-height: 0;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #4a5342 transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .settings-save-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   margin: 0;
-  padding: 0 24px 18px;
-  border-bottom: 1px solid #464a39;
+  padding: 0 24px 14px;
+}
+.settings-save-note::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7fb069;
+  box-shadow: 0 0 6px #7fb06988;
 }
 .settings-section {
-  border-bottom: 1px solid #464a39;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  transition: border-color 0.15s ease;
+}
+.settings-section[open] {
+  border-color: #4d5844;
 }
 .settings summary {
+  position: relative;
   cursor: pointer;
-  color: #e9e2cd;
-  font-size: 13px;
-  line-height: 1.5;
-  padding: 16px 4px;
+  list-style: none;
+  color: #f1ecd9;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 16px 44px 16px 18px;
   overflow-wrap: anywhere;
+  border-radius: 14px;
+}
+.settings summary::-webkit-details-marker {
+  display: none;
+}
+.settings summary::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -6px;
+  border-right: 2px solid var(--brass);
+  border-bottom: 2px solid var(--brass);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.settings details[open] > summary::after {
+  transform: rotate(-135deg);
+  margin-top: -2px;
+}
+.settings summary:hover {
+  background: #ffffff08;
 }
 .settings summary:focus-visible {
   outline: 2px solid var(--brass);
   outline-offset: -2px;
-  border-radius: 3px;
-}
-.settings summary::marker {
-  color: var(--brass);
 }
 .settings summary > span {
   display: block;
-  padding-left: 15px;
+  padding-top: 2px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: normal;
 }
 .settings-section[open] > summary {
   color: var(--brass);
 }
 .settings-section-body {
-  padding: 0 8px 20px;
+  padding: 4px 18px 18px;
+  border-top: 1px solid var(--line);
 }
 .settings-section-body > :first-child {
-  margin-top: 0;
+  margin-top: 12px;
 }
 .settings-help {
   margin-top: 12px;
 }
 .settings-help > summary {
-  font-size: 11px;
-  padding: 10px 0;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 10px 28px 10px 0;
   color: var(--muted);
+}
+.settings-help > summary::after {
+  right: 6px;
 }
 .favorite-section {
   margin-top: 12px;
-  padding: 0 12px 8px;
-  border: 1px solid #4c503e;
-  border-radius: 4px;
-  background: #12171244;
+  padding: 0 14px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--field);
 }
 .favorite-section > summary {
-  padding: 12px 0 4px;
+  padding: 12px 28px 6px 0;
+  font-size: 13px;
+}
+.favorite-section > summary::after {
+  right: 4px;
 }
 .league-options {
   display: grid;
@@ -557,53 +698,57 @@ textarea:focus-visible {
   column-gap: 12px;
 }
 .settings .league-options label {
-  font-size: 11px;
-  margin: 10px 0;
+  font-size: 12px;
+  margin: 8px 0;
 }
 .range-captions {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
 }
 .settings-reset {
-  border-top: 1px solid #464a39;
+  border-top: 1px solid var(--line);
   margin-top: 24px;
 }
 .backup-confirm {
-  border: 1px solid var(--border);
-  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  padding: 14px;
   margin-top: 16px;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 .settings input:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 .selected-city {
-  color: #e9e2cd;
-  font-size: 14px;
+  color: #f1ecd9;
+  font-size: 16px;
+  font-weight: 600;
   margin: 0 0 16px;
   line-height: 1.5;
 }
 .message-editor {
   margin: 18px 0;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  border-radius: 12px;
 }
 .message-editor legend {
   color: var(--brass);
   font-size: 12px;
+  font-weight: 600;
 }
 .settings textarea {
   width: 100%;
   resize: vertical;
-  background: #121712;
+  background: var(--field);
   color: #f0eddf;
-  border: 1px solid #4c503e;
-  padding: 10px;
-  border-radius: 3px;
+  border: 1px solid var(--line);
+  padding: 11px 12px;
+  border-radius: 10px;
 }
 .message-preview {
   display: grid;
@@ -624,17 +769,40 @@ textarea:focus-visible {
   flex-direction: column;
   gap: 8px;
   color: #dedccb;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   margin: 16px 0;
 }
 .settings input:not([type="checkbox"]):not([type="range"]),
 .settings select {
-  background: #121712;
-  border: 1px solid #4c503e;
-  border-radius: 3px;
-  padding: 12px;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
   color: #f0eddf;
   width: 100%;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.settings input:not([type="checkbox"]):not([type="range"]):hover,
+.settings select:hover,
+.settings textarea:hover {
+  border-color: #566049;
+}
+.settings input:not([type="checkbox"]):not([type="range"]):focus-visible,
+.settings select:focus-visible,
+.settings textarea:focus-visible {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px #c3b18a33;
+}
+.settings select {
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23c3b18a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
 }
 .settings .two {
   display: grid;
@@ -645,23 +813,63 @@ textarea:focus-visible {
 .settings label {
   min-width: 0;
 }
+/* Checkboxes render as toggle switches with the label on the left. */
 .settings .check {
-  flex-direction: row;
+  flex-direction: row-reverse;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
+  cursor: pointer;
 }
 .settings input[type="checkbox"] {
-  accent-color: var(--brass);
-  width: 17px;
-  height: 17px;
+  appearance: none;
+  position: relative;
+  width: 40px;
+  height: 24px;
   flex-shrink: 0;
+  margin: 0;
+  border-radius: 999px;
+  background: #3a4234;
+  border: 1px solid #4a5342;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.settings input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #d9d3bd;
+  box-shadow: 0 1px 3px #0006;
+  transition: transform 0.2s ease;
+}
+.settings input[type="checkbox"]:checked {
+  background: #a9915f;
+  border-color: #c3b18a;
+}
+.settings input[type="checkbox"]:checked::before {
+  transform: translateX(16px);
+  background: #fffaf0;
+}
+.settings input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings input[type="checkbox"],
+  .settings input[type="checkbox"]::before {
+    transition: none;
+  }
 }
 .settings input[type="range"] {
   accent-color: var(--brass);
 }
 .hint {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .settings-identity {
@@ -704,14 +912,16 @@ textarea:focus-visible {
 .reset {
   width: 100%;
   padding: 12px;
+  font-weight: 600;
   color: var(--brass);
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  border: 1px solid #6b6648;
+  border-radius: 10px;
   margin-top: 18px;
+  transition: background 0.15s ease;
 }
 .reset:hover {
-  background: #2b3028;
+  background: #c3b18a1f;
 }
 .city-results {
   display: grid;
@@ -719,16 +929,19 @@ textarea:focus-visible {
   margin-top: 12px;
 }
 .city-results button {
-  background: #242b22;
-  border: 1px solid #4c503e;
+  background: var(--field);
+  border: 1px solid var(--line);
   color: #eee9d7;
-  padding: 10px;
+  padding: 11px 12px;
   text-align: left;
-  border-radius: 3px;
+  border-radius: 10px;
+}
+.city-results button:hover {
+  border-color: var(--brass);
 }
 .team-picker {
-  border: 1px solid #4c503e;
-  border-radius: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
   max-height: 220px;
   overflow: auto;
   margin-top: 16px;
@@ -891,10 +1104,6 @@ textarea:focus-visible {
   .settings input[type="range"] {
     min-height: 44px;
   }
-  .settings input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-  }
   .settings summary {
     min-height: 44px;
   }
@@ -989,6 +1198,7 @@ textarea:focus-visible {
     width: 100%;
     height: 100dvh;
     border-left: 0;
+    border-radius: 0;
   }
 }
 @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
@@ -1006,4 +1216,26 @@ textarea:focus-visible {
   .actions button {
     flex: 0 0 auto;
   }
+}
+
+/* Burn-in protection: drift the face a few pixels over ten minutes. */
+@keyframes face-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(6px, 4px);
+  }
+  50% {
+    transform: translate(0, 8px);
+  }
+  75% {
+    transform: translate(-6px, 4px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.instrument-face.drift {
+  animation: face-drift 600s linear infinite;
 }

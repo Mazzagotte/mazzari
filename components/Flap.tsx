@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { SYMBOLS } from "../lib/config";
-export function Flap({
+function FlapComponent({
   char,
   speed,
   onFlip,
@@ -58,25 +58,24 @@ export function Flap({
   }, [clean, speed, reducedMotion, delay]);
   return (
     <div className="flap" aria-label={clean}>
-      <div className="flap-base">
-        <span>{shown}</span>
-      </div>
       <div className="flap-top">
         <span>{shown}</span>
       </div>
       <div className="flap-bottom">
         <span>{shown}</span>
       </div>
-      <div
-        className={`flap-turn ${flipping ? "turning" : ""}`}
-        key={`${top}-${shown}`}
-        style={{ animationDuration: `${Math.max(35, speed)}ms` }}
-      >
-        <span>{top}</span>
-      </div>
-      <div className="flap-seam" />
-      <div className="flap-pin left" />
-      <div className="flap-pin right" />
+      {flipping && (
+        <div
+          className="flap-turn"
+          key={`${top}-${shown}`}
+          style={{ animationDuration: `${Math.max(35, speed)}ms` }}
+          onAnimationEnd={() => setFlipping(false)}
+        >
+          <span>{top}</span>
+        </div>
+      )}
     </div>
   );
 }
+
+export const Flap = memo(FlapComponent);

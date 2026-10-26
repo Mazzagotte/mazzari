@@ -30,8 +30,8 @@ function BoardComponent({
       <div className="board-inner" aria-hidden="true" style={{ gridTemplateRows: rows }}>
         {lines.map((line, r) => (
           <div
-            className={`flap-row${r > 0 && sectionStarts.includes(r) ? " section-start" : ""}${emphasizeClock && r === 0 ? " clock-row" : ""}`}
             key={r}
+            className={`flap-row${r > 0 && sectionStarts.includes(r) ? " section-start" : ""}${emphasizeClock && r === 0 ? " clock-row" : ""}`}
           >
             {[...boardText(line).padEnd(columns, " ")].map((char, c) => (
               <Flap
@@ -49,4 +49,16 @@ function BoardComponent({
     </div>
   );
 }
-export const Board = memo(BoardComponent);
+const sameLines = (a: string[], b: string[]) => a.length === b.length && a.every((line, index) => line === b[index]);
+// `lines` is rebuilt on every render of the page, so compare it by content or the memo never hits.
+export const Board = memo(
+  BoardComponent,
+  (a, b) =>
+    sameLines(a.lines, b.lines) &&
+    sameLines((a.sectionStarts ?? []).map(String), (b.sectionStarts ?? []).map(String)) &&
+    a.columns === b.columns &&
+    a.speed === b.speed &&
+    a.onFlip === b.onFlip &&
+    a.reducedMotion === b.reducedMotion &&
+    a.emphasizeClock === b.emphasizeClock,
+);
