@@ -176,6 +176,137 @@ export const DRAWING_TEMPLATES = [
       );
     }),
   },
+  {
+    id: "sun",
+    label: "Sun",
+    pixels: raster((x, y) => {
+      const rays = Array.from({ length: 8 }, (_, i) => {
+        const a = (i * Math.PI) / 4;
+        return line(
+          x,
+          y,
+          16 + Math.cos(a) * 6.5,
+          10 + Math.sin(a) * 6.5,
+          16 + Math.cos(a) * 9.3,
+          10 + Math.sin(a) * 9.3,
+          1.4,
+        );
+      }).some(Boolean);
+      return ellipse(x, y, 16, 10, 4.2) || rays;
+    }),
+  },
+  {
+    id: "moon",
+    label: "Moon & stars",
+    pixels: raster(
+      (x, y) =>
+        (ellipse(x, y, 13, 10, 8) && !ellipse(x, y, 17.5, 8, 7)) ||
+        ellipse(x, y, 25, 4, 1) ||
+        ellipse(x, y, 28, 11, 0.9) ||
+        ellipse(x, y, 23, 16, 1.1),
+    ),
+  },
+  {
+    id: "house",
+    label: "House",
+    pixels: raster(
+      (x, y) =>
+        line(x, y, 5, 9.5, 16, 2.5, 1.4) ||
+        line(x, y, 27, 9.5, 16, 2.5, 1.4) ||
+        line(x, y, 8, 8.5, 8, 18.5, 1.4) ||
+        line(x, y, 24, 8.5, 24, 18.5, 1.4) ||
+        line(x, y, 7.3, 18.5, 24.7, 18.5, 1.4) ||
+        (x >= 14 && x <= 18 && y >= 12 && y <= 18.5) ||
+        (x >= 10.5 && x <= 12.5 && y >= 11 && y <= 13) ||
+        (x >= 19.5 && x <= 21.5 && y >= 11 && y <= 13) ||
+        (x >= 21 && x <= 23.5 && y >= 3 && y <= 6.5),
+    ),
+  },
+  {
+    id: "tree",
+    label: "Pine tree",
+    pixels: raster(
+      (x, y) =>
+        polygon([
+          [16, 1],
+          [22, 7],
+          [10, 7],
+        ])(x, y) ||
+        polygon([
+          [16, 5],
+          [24, 12],
+          [8, 12],
+        ])(x, y) ||
+        polygon([
+          [16, 9],
+          [27, 16.5],
+          [5, 16.5],
+        ])(x, y) ||
+        (x >= 14.5 && x <= 17.5 && y >= 16.5 && y <= 19.5),
+    ),
+  },
+  {
+    id: "rainbow",
+    label: "Rainbow",
+    pixels: raster((x, y) => {
+      const d = Math.hypot(x - 16, y - 19);
+      return y <= 19.5 && ((d >= 12 && d <= 14.3) || (d >= 8.7 && d <= 11) || (d >= 5.4 && d <= 7.7));
+    }),
+  },
+  {
+    id: "music",
+    label: "Music notes",
+    pixels: raster(
+      (x, y) =>
+        ellipse(x, y, 10, 15.5, 3, 2.2) ||
+        ellipse(x, y, 22, 13.5, 3, 2.2) ||
+        line(x, y, 12.6, 15, 12.6, 4, 1.4) ||
+        line(x, y, 24.6, 13, 24.6, 2.5, 1.4) ||
+        polygon([
+          [12, 4],
+          [25.3, 2.5],
+          [25.3, 5.8],
+          [12, 7.3],
+        ])(x, y),
+    ),
+  },
+  {
+    id: "gift",
+    label: "Gift",
+    pixels: raster((x, y) => {
+      const box = x >= 6 && x <= 26 && y >= 9.5 && y <= 18.5 && (x < 7.4 || x > 24.6 || y > 17.1);
+      const lid = x >= 5 && x <= 27 && y >= 6.5 && y <= 9.5 && (x < 6.4 || x > 25.6 || y < 7.9 || y > 8.1);
+      const ribbon = x >= 14.5 && x <= 17.5 && y >= 6.5 && y <= 18.5;
+      const bow =
+        (ellipse(x, y, 12.5, 4, 3.6, 2.4) && !ellipse(x, y, 12.5, 4, 2.2, 1.1)) ||
+        (ellipse(x, y, 19.5, 4, 3.6, 2.4) && !ellipse(x, y, 19.5, 4, 2.2, 1.1));
+      return box || lid || ribbon || bow;
+    }),
+  },
+  {
+    id: "sailboat",
+    label: "Sailboat",
+    pixels: raster(
+      (x, y) =>
+        polygon([
+          [5, 15],
+          [27, 15],
+          [23, 19],
+          [9, 19],
+        ])(x, y) ||
+        line(x, y, 15, 2, 15, 15, 1.2) ||
+        polygon([
+          [16.5, 3],
+          [16.5, 13.5],
+          [25, 13.5],
+        ])(x, y) ||
+        polygon([
+          [13.5, 5.5],
+          [13.5, 13.5],
+          [7, 13.5],
+        ])(x, y),
+    ),
+  },
 ] as const;
 
 export function isDrawing(value: unknown): value is Drawing {

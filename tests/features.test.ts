@@ -266,7 +266,24 @@ test("legacy 16 by 10 drawings migrate without losing pixels, caption, or timer"
 test("drawing templates are distinct editable grids that preserve captions and round-trip in backups", () => {
   assert.deepEqual(
     DRAWING_TEMPLATES.map((template) => template.id),
-    ["heart", "smiley", "star", "flower", "butterfly", "coffee", "letter", "cat"],
+    [
+      "heart",
+      "smiley",
+      "star",
+      "flower",
+      "butterfly",
+      "coffee",
+      "letter",
+      "cat",
+      "sun",
+      "moon",
+      "house",
+      "tree",
+      "rainbow",
+      "music",
+      "gift",
+      "sailboat",
+    ],
   );
   assert.equal(new Set(DRAWING_TEMPLATES.map((template) => template.pixels.join(""))).size, DRAWING_TEMPLATES.length);
   for (const template of DRAWING_TEMPLATES) {
