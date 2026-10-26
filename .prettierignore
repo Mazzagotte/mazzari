@@ -1,0 +1,7 @@
+.next
+.next-production
+.open-next
+.wrangler
+node_modules
+package-lock.json
+*.md
