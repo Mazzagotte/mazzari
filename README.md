@@ -2,9 +2,9 @@
 
 A personal airport-inspired split-flap smart display built with Next.js, React, TypeScript, and CSS 3D animations. It shows a local clock, today's weather, and sports scores/schedules on an adaptive board with up to 24 columns. Rows are allocated only for active content, including selected sports leagues and personal messages.
 
-Styled as a dark green instrument enclosure with brass detailing, MAZZARI No. 1 retains all weather, sports, accessibility, and configuration features. **Electromechanical information system. Precision in every flip.** Existing browser preferences and launcher filenames remain compatible.
+Styled in deep forest (#101A12), olive green (#233528), champagne gold (#D8B77B), and warm ivory (#F3E8D0), MAZZARI No. 1 retains all weather, sports, accessibility, and configuration features. **Electromechanical information system. Precision in every flip.** Existing browser preferences and launcher filenames remain compatible.
 
-The design takes its cues from mid-century Italian instruments: olive-black enamel, parchment lettering, and restrained champagne trim. The clean display retains only MAZZARI / No. 1 branding and useful information: no corner labels, taglines, repeated headings, array dimensions, or healthy-feed diagnostics. Controls disappear after five seconds of inactivity; moving the pointer, touching the display, or using the keyboard reveals them. Keyboard-focused controls remain visible, and touch screens retain higher idle contrast. The board does not shift when controls fade. Stale/offline warnings remain visible whenever attention is needed.
+The design takes its cues from mid-century Italian instruments: deep forest enamel, warm ivory lettering, and restrained champagne trim. The supplied MAZZARI monogram is used on the display and in Settings, with the supplied forest-and-gold logo as the browser favicon. The clean display retains only MAZZARI / No. 1 branding and useful information: no corner labels, taglines, repeated headings, array dimensions, or healthy-feed diagnostics. Controls disappear after five seconds of inactivity; moving the pointer, touching the display, or using the keyboard reveals them. Keyboard-focused controls remain visible, and touch screens retain higher idle contrast. The board does not shift when controls fade. Stale/offline warnings remain visible whenever attention is needed.
 
 Subtle champagne rules separate the clock, combined current-weather/forecast section, each selected sports league, and active personal messages. Dividers do not consume flap rows and are omitted in Message board and Clock only modes.
 
@@ -14,9 +14,9 @@ On phones, tablets and desktops, the complete board scales to the available widt
 
 Changed characters start in a gentle left-to-right ripple (18 ms between columns); unchanged cells do not animate. Reduced motion bypasses the ripple and mechanical animation.
 
-The clock has a taller first row and larger lettering, except during message-only display. The MAZZARI wordmark is an original vector drawing with geometric M, A and R forms, rendered locally without web fonts. Mechanical audio combines a brief filtered contact sound and a muted resonant body, with slight variations and a maximum of one click every 110 ms across the entire board.
+The clock has a taller first row and larger lettering, except during message-only display. The supplied transparent MAZZARI monogram is served locally as a PNG without external requests or web fonts. Mechanical audio combines a brief filtered contact sound and a muted resonant body, with slight variations and a maximum of one click every 110 ms across the entire board.
 
-Maker branding stays off the instrument face: a simplified champagne M monogram appears in the browser icon and Settings header, with a geometric MAZZAGOTTE.DEV maker credit in Settings' About section. These locally served vector adaptations use transparent artwork for Settings and an olive-backed browser icon for small-size contrast; they do not embed the reference images' backgrounds or require external fonts or requests.
+Maker branding stays off the instrument face: the supplied monogram appears in the Settings header and browser favicon, with a geometric MAZZAGOTTE.DEV maker credit in Settings' About section. Branding assets are served locally without external fonts or requests.
 
 ### Evening and dedicated-screen comfort
 
@@ -26,6 +26,25 @@ Under **Settings > Evening & Screen**, optionally enable:
 - **Keep screen awake**: requests the browser's Screen Wake Lock while visible, and tries again when the display returns or you interact with it. Settings shows the actual request/release/error state and provides a retry button. Support, permissions and device power-saving policies can limit availability. It is not a burn-in prevention feature.
 
 Both options are off by default, preserving existing screen/power behavior. Clock, messages, favorites and schedules are preserved. Daily feeds refresh promptly when the page becomes visible, regains focus, reconnects, or returns after a long timer gap (such as sleep), while duplicate in-flight refreshes are avoided. Failed refreshes retain the last good data with the existing stale/offline warnings.
+
+### Draw a gesture
+
+Under **Settings > Draw a gesture**, choose a previewed template: heart, smiley face, star, flower, butterfly, coffee cup, love letter (envelope), or cat. Templates are drawn at 32 columns by 20 rows for smoother curves and finer detail. Choosing a template replaces the grid but preserves your caption; every template remains editable. Or clear the 32-column, 20-row grid to make your own drawing. Tap or drag to paint champagne-gold flaps; start a stroke on a filled flap to erase. Keyboard users can Tab to a cell and press Space or Enter to toggle it. An optional caption (up to 24 characters) appears centered below the artwork. The editor grid previews the shape; blank rows and columns stay in place on the display. Drawing board scales to the screen with smaller flaps; text modes retain their 24-column limit.
+
+Choose **Show Drawing board**, then close Settings to reveal it. Under **Display**, optionally return to the Daily board in 30 minutes, 2 hours, or tomorrow at 7 AM in the selected city's timezone. The drawing and timer survive reloads, and the return never deletes the drawing. Weather and sports polling pause while Drawing board is active. Flaps retain the existing ripple animation and reduced-motion behavior.
+
+The draft drawing and up to 20 saved cards are stored per browser and included in settings backups. Existing 16-by-10 drawings are upgraded to 32 by 20 by expanding each original pixel into four flaps, preserving the artwork, caption and return timer. Choose a template again to use its newly detailed version. Older backups without drawings get the heart template; older settings without cards start with an empty collection. This feature does not pair devices or send drawings remotely.
+
+#### Personal cards and surprises
+
+- **Saved cards:** give the draft a name and choose **Save as new card**. **Edit** loads a saved copy into the editor; **Update loaded card** explicitly replaces that saved copy. Changes to the draft never silently change saved cards. Include cards in rotation, then choose **Show saved cards**. Selected cards rotate every 20 seconds only in Drawing board mode. **Show Drawing board** shows the draft instead; if no selected cards remain, playback falls back to the draft.
+- **Solid or outline:** choose solid gold or a gold outline. The styled preview shows the result, while the editing grid always keeps the original pixels. Switching styles is non-destructive, including for freehand shapes and templates that already contain thin lines.
+- **Reveal effects:** choose a left-to-right sweep, center-outward reveal, or outline-first fill. Reveals happen on card arrival rather than repeating while a card is held. All effects honor reduced motion and existing sound/quiet-hour preferences.
+- **Signature:** add up to 24 characters, rendered beneath the other text with a leading dash.
+- **Meaningful dates:** countdowns use the selected city's calendar date, showing days until, today, or days since. Anniversaries show completed years together; future anniversary dates show days until. February 29 anniversaries advance on March 1 in non-leap years. Add an optional date label such as **OUR TRIP**. Date text updates as the local calendar changes.
+- **One-time surprises:** schedule a saved card for a date/time in the selected city's timezone and a duration of 1, 5, 15, 30, 60 or 120 minutes. Scheduling is independent of the rotation checkbox. A surprise temporarily overrides any board mode; its end restores the underlying mode without changing your settings. Existing timed returns keep counting down underneath. For overlaps, the latest start wins (ties use card ID); any still-active earlier surprise resumes afterward. Use **End surprise** or cancel its schedule to stop it early. Deleting a card cancels its schedule.
+
+Surprises require this browser to be open; there are no push notifications or remote delivery. Reloading or waking during the scheduled window shows only the remaining duration; expired windows are not replayed. Schedules store absolute timestamps, so changing city later does not shift an already scheduled instant. Invalid and nonexistent daylight-saving times are rejected; repeated local times use the first occurrence. Backups preserve schedules, cards, styles, signatures, dates and reveal choices.
 
 ### Settings backup and timed messages
 
@@ -140,6 +159,8 @@ Cloudflare Workers Builds configuration (repository root):
 - Node.js: 22.19.0, selected by `.node-version`
 - R2 bucket: `mazzari-cache`, private, bound as `NEXT_INC_CACHE_R2_BUCKET`
 - Revalidation queue: SQLite Durable Object `DOQueueHandler`, configured in `wrangler.jsonc`
+
+The app requires Next.js 16.4.2 or a later compatible 16.x release, supported by the OpenNext adapter. Next.js 15 is no longer accepted by OpenNext's support-policy check. After updating dependencies, run `npm ci` to install the versions in the lockfile; do not bypass the check with `--dangerouslyUseUnsupportedNextVersion`.
 
 Push changes to `main` to trigger the connected build. The build wrapper selects OpenNext's required `.next` output without changing the Windows launcher's `.next-production` output. Do not run the cloud build beside an active `npm run dev` in the same directory: they both use `.next`. Use Cloudflare's Linux build environment or a separate checkout. Windows OpenNext builds are best-effort; the standard local launcher remains supported.
 

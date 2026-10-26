@@ -23,7 +23,9 @@ export function SettingsBackup({ settings, onChange }: { settings: Settings; onC
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setStatus("Backup download requested. Keep this file private: it includes your messages and location.");
+      setStatus(
+        "Backup download requested. Keep this file private: it includes your messages, drawings, scheduled cards and location.",
+      );
     } catch (error) {
       console.error("Settings export failed", error);
       setError("Settings could not be exported.");
@@ -33,8 +35,9 @@ export function SettingsBackup({ settings, onChange }: { settings: Settings; onC
     <section>
       <h3>BACKUP & RESTORE</h3>
       <p className="hint">
-        Transfer your city, teams, messages and preferences between browsers, including your separate kiosk profile.
-        Backups contain personal information. Live feeds and saved final scores are not included.
+        Transfer your city, teams, messages, drawings, saved cards, surprise schedules and preferences between browsers,
+        including your separate kiosk profile. Backups contain personal information. Live feeds and saved final scores
+        are not included.
       </p>
       <div className="two">
         <button className="reset" onClick={exportFile}>
@@ -73,8 +76,10 @@ export function SettingsBackup({ settings, onChange }: { settings: Settings; onC
         <div className="backup-confirm">
           <p className="hint">
             Replace this browser&apos;s settings with the backup for {pending.city}? It contains{" "}
-            {pending.messages.length} personal messages and {pending.leagues.length} enabled leagues. An expired Message
-            board return timer will return to Daily board immediately.
+            {pending.messages.length} personal messages, {pending.cards.length} saved cards, a drawing and{" "}
+            {pending.leagues.length} enabled leagues. An expired Message or Drawing board return timer returns to Daily
+            board immediately. Active surprise schedules resume for their remaining duration; expired surprises are not
+            replayed.
           </p>
           <div className="two">
             <button

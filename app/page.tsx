@@ -16,6 +16,8 @@ import {
 import { isGameFeed, isWeather, Weather } from "../lib/feeds";
 import { activeMessages, messagePages, rotatingMessage } from "../lib/messages";
 import { boardLayout } from "../lib/boardLayout";
+import { drawingLayout } from "../lib/drawing";
+import { activeSurprise, rotatingCard } from "../lib/gestureCards";
 import { eveningActive } from "../lib/evening";
 import { createClickBuffer, playMechanicalClick } from "../lib/mechanicalAudio";
 import { Wordmark } from "../components/Wordmark";
@@ -444,7 +446,7 @@ export default function Home() {
   const rotationLines = [...clockLines];
   const w = weather.data?.current,
     d = weather.data?.daily;
-  const unit = settings.unit === "fahrenheit" ? "F" : "C";
+  const unit = settings.unit === "fahrenheit" ? "°F" : "°C";
   if (settings.showWeather || settings.showForecast) sectionStarts.push(lines.length);
   if (settings.showWeather) {
     if (w)
@@ -510,9 +512,19 @@ export default function Home() {
       : settings.displayMode === "messages" && message
         ? messageLines
         : clockLines;
-  const layout = boardLayout(lines, sizingLines, settings.displayMode === "daily" ? sectionStarts : []);
+  const surprise = now ? activeSurprise(settings.cards, now.getTime()) : undefined;
+  const card =
+    surprise ||
+    (settings.displayMode === "drawing" && settings.playCards ? rotatingCard(settings.cards, tick) : undefined);
+  const artwork = card?.drawing || settings.drawing;
+  const drawing =
+    surprise || settings.displayMode === "drawing" ? drawingLayout(artwork, current, settings.timezone) : null;
+  const drawingKey = drawing
+    ? `${surprise ? "surprise" : "drawing"}-${card?.id || "draft"}-${surprise?.schedule?.at || 0}`
+    : "text";
+  const layout = drawing || boardLayout(lines, sizingLines, settings.displayMode === "daily" ? sectionStarts : []);
   const rowCount = layout.lines.length;
-  const clockVisible = settings.displayMode !== "messages" || !message;
+  const clockVisible = !drawing && (settings.displayMode !== "messages" || !message);
   const aspectRatio = (1.75 * 12 * (layout.columns / 24)) / (rowCount + (clockVisible ? 0.35 : 0));
   const stageStyle: CSSProperties & { "--fit-width": string } = {
     aspectRatio,
@@ -548,6 +560,7 @@ export default function Home() {
         <div className="display-area">
           <div className="board-stage" style={stageStyle}>
             <Board
+              key={drawingKey}
               lines={layout.lines}
               columns={layout.columns}
               speed={settings.speed}
@@ -555,10 +568,25 @@ export default function Home() {
               reducedMotion={reducedMotion}
               sectionStarts={layout.sectionStarts}
               emphasizeClock={clockVisible}
+              pixels={drawing?.pixels}
+              reveal={artwork.reveal}
+              artSource={drawing?.source}
+              description={
+                drawing
+                  ? `${surprise ? "Scheduled surprise" : card?.name || "Personal drawing"}${
+                      drawing.lines.some((line) => line.trim())
+                        ? `: ${drawing.lines
+                            .map((line) => line.trim())
+                            .filter(Boolean)
+                            .join(" / ")}`
+                        : ""
+                    }`
+                  : undefined
+              }
             />
           </div>
         </div>
-        {settings.displayMode === "daily" && (
+        {settings.displayMode === "daily" && !surprise && (
           <footer className="feed-warnings" role="status">
             {["STALE", "OFFLINE"].includes(weatherState) && (
               <span>{describeFeed("WEATHER", weatherState, weather.updated)}</span>
@@ -592,6 +620,18 @@ export default function Home() {
       </div>
       <div className="topbar">
         <div className="actions">
+          {surprise && (
+            <button
+              onClick={() =>
+                setSettings((s) => ({
+                  ...s,
+                  cards: s.cards.map((item) => (item.id === surprise.id ? { ...item, schedule: null } : item)),
+                }))
+              }
+            >
+              END SURPRISE
+            </button>
+          )}
           {settings.displayMode === "daily" && (
             <button
               title="Refresh information"

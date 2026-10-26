@@ -6,6 +6,8 @@ import { DisplaySettings, MessageSettings } from "./MessageSettings";
 import Image from "next/image";
 import { MakerWordmark } from "./MakerWordmark";
 import { SettingsBackup } from "./SettingsBackup";
+import { DrawingSettings } from "./DrawingSettings";
+import type { ESPNTeam } from "../lib/espnTeams";
 export function SettingsPanel({
   settings,
   onChange,
@@ -100,7 +102,7 @@ export function SettingsPanel({
       >
         <header>
           <div className="settings-identity">
-            <Image src="/maker-mark.svg" width={32} height={32} alt="" />
+            <Image src="/mazzari-logo.png" width={32} height={32} alt="" />
             <h2 id="settings-title">Settings</h2>
           </div>
           <button aria-label="Close settings" className="icon-btn" onClick={onClose}>
@@ -334,6 +336,14 @@ export function SettingsPanel({
           </details>
           <details className="settings-section">
             <summary>
+              Draw a gesture<span>A heart, a sketch, a little surprise</span>
+            </summary>
+            <div className="settings-section-body">
+              <DrawingSettings settings={settings} onChange={onChange} />
+            </div>
+          </details>
+          <details className="settings-section">
+            <summary>
               Screen &amp; sound<span>Evening, motion &amp; audio</span>
             </summary>
             <div className="settings-section-body">
@@ -509,8 +519,8 @@ export function SettingsPanel({
               <div className="settings-reset">
                 <h3>RESET THIS BROWSER</h3>
                 <p className="hint">
-                  Restoring defaults removes your saved messages, favorite teams and display preferences. Export a
-                  backup first if you want to keep them.
+                  Restoring defaults removes your saved messages, drawing, cards, surprise schedules, favorite teams and
+                  display preferences. Export a backup first if you want to keep them.
                 </p>
                 {!confirmReset ? (
                   <button className="reset" onClick={() => setConfirmReset(true)}>
@@ -573,7 +583,7 @@ function LeagueFavorites({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const [teams, setTeams] = useState<{ abbr: string; name: string }[]>([]),
+  const [teams, setTeams] = useState<ESPNTeam[]>([]),
     [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   useEffect(() => {
@@ -588,11 +598,15 @@ function LeagueFavorites({
             (team: unknown) =>
               team !== null &&
               typeof team === "object" &&
+              "id" in team &&
+              typeof team.id === "string" &&
+              !!team.id &&
               "abbr" in team &&
               typeof team.abbr === "string" &&
               "name" in team &&
               typeof team.name === "string",
-          )
+          ) ||
+          new Set(data.teams.map((team: ESPNTeam) => team.id)).size !== data.teams.length
         )
           throw new Error("Invalid team list. Enter abbreviations manually.");
         setTeams(data.teams);
@@ -646,7 +660,7 @@ function LeagueFavorites({
           </p>
         ) : matches.length ? (
           matches.map((team) => (
-            <label className="check" key={team.abbr}>
+            <label className="check" key={team.id}>
               <input
                 type="checkbox"
                 checked={favorites.includes(team.abbr.toUpperCase())}

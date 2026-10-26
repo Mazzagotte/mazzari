@@ -14,7 +14,7 @@ export function DisplaySettings({ settings, onChange }: { settings: Settings; on
           value={settings.displayMode}
           onChange={(e) => {
             const mode = e.target.value;
-            if (mode === "daily" || mode === "messages" || mode === "clock") {
+            if (mode === "daily" || mode === "messages" || mode === "clock" || mode === "drawing") {
               setReturnError("");
               onChange({ ...settings, displayMode: mode, returnToDailyAt: 0 });
             }
@@ -23,9 +23,10 @@ export function DisplaySettings({ settings, onChange }: { settings: Settings; on
           <option value="daily">Daily board</option>
           <option value="messages">Message board</option>
           <option value="clock">Clock only</option>
+          <option value="drawing">Drawing board</option>
         </select>
       </label>
-      {settings.displayMode === "messages" && (
+      {(settings.displayMode === "messages" || settings.displayMode === "drawing") && (
         <>
           <label>
             Return to Daily board
@@ -47,7 +48,7 @@ export function DisplaySettings({ settings, onChange }: { settings: Settings; on
                 }
               }}
             >
-              <option value="never">Stay on Message board</option>
+              <option value="never">Stay on {settings.displayMode === "drawing" ? "Drawing" : "Message"} board</option>
               {settings.returnToDailyAt > 0 && (
                 <option value="scheduled" disabled>
                   Return scheduled
@@ -69,7 +70,7 @@ export function DisplaySettings({ settings, onChange }: { settings: Settings; on
                 minute: "2-digit",
                 timeZoneName: "short",
               }).format(new Date(settings.returnToDailyAt))}
-              . This timer survives reloads; messages are not deleted.
+              . This timer survives reloads; messages and drawings are not deleted.
             </p>
           )}
           {returnError && (
@@ -81,11 +82,12 @@ export function DisplaySettings({ settings, onChange }: { settings: Settings; on
       )}
       <p className="hint">
         Daily board shows your clock, selected feeds and active messages. Message board shows messages alone; Clock only
-        hides feeds and messages.
+        hides feeds and messages. Drawing board shows the draft or selected saved cards. Scheduled surprises temporarily
+        override any mode, then return to it.
       </p>
       <p className="hint">
-        The grid fits the longest line across the active rotation, up to 24 columns. Empty rows are removed. Its width
-        stays steady between cards and adjusts when content changes.
+        Text modes fit the longest line across the active rotation, up to 24 columns, and remove empty rows. Drawing
+        board preserves the full drawing grid.
       </p>
     </>
   );

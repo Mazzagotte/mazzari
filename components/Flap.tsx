@@ -14,7 +14,9 @@ export function Flap({
   reducedMotion: boolean;
   delay?: number;
 }) {
-  const clean = SYMBOLS.includes(char.toUpperCase()) ? char.toUpperCase() : " ";
+  const value = char.toUpperCase();
+  const isUnit = value === "°F" || value === "°C";
+  const clean = SYMBOLS.includes(value) || isUnit || value === "#" ? value : " ";
   const [shown, setShown] = useState(" ");
   const [top, setTop] = useState(" ");
   const [flipping, setFlipping] = useState(false);
@@ -37,6 +39,20 @@ export function Flap({
         setFlipping(false);
         return;
       }
+      if (isUnit || clean === "#" || current.current === "#" || current.current === "°F" || current.current === "°C") {
+        setTop(current.current);
+        setShown(clean);
+        setFlipping(true);
+        current.current = clean;
+        flipRef.current?.();
+        timer.current = setTimeout(
+          () => {
+            if (!cancelled) setFlipping(false);
+          },
+          Math.max(35, speed),
+        );
+        return;
+      }
       const at = SYMBOLS.indexOf(current.current),
         end = SYMBOLS.indexOf(clean);
       const dist = (end - at + SYMBOLS.length) % SYMBOLS.length;
@@ -55,24 +71,24 @@ export function Flap({
       cancelled = true;
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [clean, speed, reducedMotion, delay]);
+  }, [clean, speed, reducedMotion, delay, isUnit]);
   return (
-    <div className="flap" aria-label={clean}>
+    <div className={`flap${isUnit ? " unit-flap" : ""}`} aria-label={clean}>
       <div className="flap-base">
-        <span>{shown}</span>
+        <span className={shown === "#" ? "art-pixel" : undefined}>{shown}</span>
       </div>
       <div className="flap-top">
-        <span>{shown}</span>
+        <span className={shown === "#" ? "art-pixel" : undefined}>{shown}</span>
       </div>
       <div className="flap-bottom">
-        <span>{shown}</span>
+        <span className={shown === "#" ? "art-pixel" : undefined}>{shown}</span>
       </div>
       <div
         className={`flap-turn ${flipping ? "turning" : ""}`}
         key={`${top}-${shown}`}
         style={{ animationDuration: `${Math.max(35, speed)}ms` }}
       >
-        <span>{top}</span>
+        <span className={top === "#" ? "art-pixel" : undefined}>{top}</span>
       </div>
       <div className="flap-seam" />
       <div className="flap-pin left" />

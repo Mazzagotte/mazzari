@@ -26,7 +26,9 @@ export function returnDeadline(choice: "30m" | "2h" | "morning", now: Date, zone
 }
 
 export function applyMessageReturn(settings: Settings, now: number): Settings {
-  return settings.displayMode === "messages" && settings.returnToDailyAt > 0 && now >= settings.returnToDailyAt
+  return (settings.displayMode === "messages" || settings.displayMode === "drawing") &&
+    settings.returnToDailyAt > 0 &&
+    now >= settings.returnToDailyAt
     ? { ...settings, displayMode: "daily", returnToDailyAt: 0 }
     : settings;
 }

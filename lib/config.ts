@@ -1,4 +1,6 @@
 import { isPersonalMessage, type PersonalMessage } from "./messages.ts";
+import { heartDrawing, isDrawing, upgradeDrawing, type Drawing } from "./drawing.ts";
+import { CARD_LIMIT, copyCard, isGestureCard, type GestureCard } from "./gestureCards.ts";
 export type League = "nfl" | "nba" | "mlb" | "nhl" | "ncaaf" | "ncaab";
 export type Settings = {
   city: string;
@@ -21,7 +23,10 @@ export type Settings = {
   quietHours: boolean;
   quietStart: string;
   quietEnd: string;
-  displayMode: "daily" | "messages" | "clock";
+  displayMode: "daily" | "messages" | "clock" | "drawing";
+  drawing: Drawing;
+  cards: GestureCard[];
+  playCards: boolean;
   messages: PersonalMessage[];
   eveningDimming: boolean;
   eveningStart: string;
@@ -53,6 +58,9 @@ export const DEFAULTS: Settings = {
   quietStart: "22:00",
   quietEnd: "07:00",
   displayMode: "daily",
+  drawing: heartDrawing(),
+  cards: [],
+  playCards: false,
   messages: [],
   eveningDimming: false,
   eveningStart: "21:00",
@@ -80,9 +88,16 @@ export function leagueLabel(league: League): string {
 export function restoreSettings(value: unknown): Settings {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid saved settings");
   const saved: Record<string, unknown> = { ...value };
-  const result = { ...DEFAULTS, leagues: [...DEFAULTS.leagues], favoritesByLeague: { ...DEFAULTS.favoritesByLeague } };
+  const result: Settings = {
+    ...DEFAULTS,
+    cards: [],
+    drawing: heartDrawing(),
+    leagues: [...DEFAULTS.leagues],
+    favoritesByLeague: { ...DEFAULTS.favoritesByLeague },
+  };
   for (const key of Object.keys(DEFAULTS) as (keyof Settings)[]) {
-    if (key === "leagues" || key === "favoritesByLeague" || key === "messages") continue;
+    if (key === "leagues" || key === "favoritesByLeague" || key === "messages" || key === "drawing" || key === "cards")
+      continue;
     if (!(key in saved)) continue;
     const candidate = saved[key];
     if (typeof candidate !== typeof DEFAULTS[key]) throw new Error(`Invalid setting: ${key}`);
@@ -122,8 +137,22 @@ export function restoreSettings(value: unknown): Settings {
       throw new Error("Invalid personal messages");
     result.messages = saved.messages.map((message) => ({ ...message }));
   }
+  if ("drawing" in saved) {
+    if (!isDrawing(saved.drawing)) throw new Error("Invalid drawing");
+    result.drawing = upgradeDrawing(saved.drawing);
+  }
+  if ("cards" in saved) {
+    if (
+      !Array.isArray(saved.cards) ||
+      saved.cards.length > CARD_LIMIT ||
+      !saved.cards.every(isGestureCard) ||
+      new Set(saved.cards.map((card) => card.id)).size !== saved.cards.length
+    )
+      throw new Error("Invalid gesture cards");
+    result.cards = saved.cards.map(copyCard);
+  }
   if (
-    !["daily", "messages", "clock"].includes(result.displayMode) ||
+    !["daily", "messages", "clock", "drawing"].includes(result.displayMode) ||
     !["fahrenheit", "celsius"].includes(result.unit) ||
     !Number.isFinite(result.lat) ||
     result.lat < -90 ||
