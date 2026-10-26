@@ -377,29 +377,6 @@ textarea:focus-visible {
   outline-color: var(--ivory);
   z-index: 1;
 }
-.drawing-templates {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.settings .drawing-template {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  margin: 0;
-  padding: 10px;
-  text-align: left;
-  font-size: 12px;
-}
-.drawing-template svg {
-  flex-shrink: 0;
-  width: 64px;
-  height: 40px;
-  fill: var(--brass);
-  background: var(--olive);
-  border-radius: 2px;
-}
 .drawing-style-preview {
   display: block;
   width: 100%;

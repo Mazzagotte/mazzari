@@ -46,26 +46,24 @@ export function DrawingSettings({ settings, onChange }: { settings: Settings; on
       <p className="hint">
         Choose a template to replace the grid, then make it your own. Your caption stays unchanged.
       </p>
-      <div className="drawing-templates" role="group" aria-label="Drawing templates">
-        {DRAWING_TEMPLATES.map((template) => (
-          <button
-            type="button"
-            className="reset drawing-template"
-            key={template.id}
-            aria-label={`${template.label} template`}
-            onClick={() => save({ ...latest.current.drawing, pixels: [...template.pixels] })}
-          >
-            <svg viewBox={`0 0 ${DRAWING_COLUMNS} ${DRAWING_ROWS}`} aria-hidden="true" focusable="false">
-              {template.pixels.flatMap((row, r) =>
-                [...row].map((cell, c) =>
-                  cell === "1" ? <rect key={`${r}-${c}`} x={c} y={r} width=".88" height=".88" /> : null,
-                ),
-              )}
-            </svg>
-            <span>{template.label}</span>
-          </button>
-        ))}
-      </div>
+      <label>
+        Template
+        <select
+          value=""
+          aria-label="Drawing template"
+          onChange={(e) => {
+            const template = DRAWING_TEMPLATES.find((item) => item.id === e.target.value);
+            if (template) save({ ...latest.current.drawing, pixels: [...template.pixels] });
+          }}
+        >
+          <option value="">Choose a template…</option>
+          {DRAWING_TEMPLATES.map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <button
         className="reset"
         onClick={() =>

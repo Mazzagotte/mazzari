@@ -83,10 +83,10 @@ export const DRAWING_TEMPLATES = [
     pixels: raster((x, y) => {
       const radius = Math.hypot(x - 16, y - 10);
       return (
-        (radius >= 8 && radius <= 9) ||
-        ellipse(x, y, 12.5, 7, 1, 1.5) ||
-        ellipse(x, y, 19.5, 7, 1, 1.5) ||
-        (y >= 11.5 && radius >= 5 && radius <= 6)
+        (radius >= 7.8 && radius <= 9.5) ||
+        ellipse(x, y, 12.3, 7.4, 1.4, 2) ||
+        ellipse(x, y, 19.7, 7.4, 1.4, 2) ||
+        (y >= 11.2 && radius >= 4.6 && radius <= 6.2)
       );
     }),
   },
@@ -95,17 +95,16 @@ export const DRAWING_TEMPLATES = [
     id: "flower",
     label: "Flower",
     pixels: raster((x, y) => {
-      const center = ellipse(x, y, 16, 7.5, 2);
-      const petals = Array.from({ length: 6 }, (_, i) => {
-        const angle = (i * Math.PI) / 3;
-        return ellipse(x, y, 16 + Math.cos(angle) * 4, 7.5 + Math.sin(angle) * 4, 3);
+      const petals = Array.from({ length: 8 }, (_, i) => {
+        const angle = -Math.PI / 2 + (i * Math.PI) / 4;
+        return ellipse(x, y, 16 + Math.cos(angle) * 5.1, 7.5 + Math.sin(angle) * 5.1, 2);
       }).some(Boolean);
       return (
-        (petals && !ellipse(x, y, 16, 7.5, 2.8)) ||
-        center ||
-        line(x, y, 16, 13, 16, 19, 1.5) ||
-        ellipse(x, y, 12.5, 15, 3, 1.3) ||
-        ellipse(x, y, 19.5, 17, 3, 1.3)
+        petals ||
+        ellipse(x, y, 16, 7.5, 2.5) ||
+        line(x, y, 16, 13.8, 16, 19.6, 1.6) ||
+        ellipse(x, y, 12.6, 17.2, 3.6, 1.5) ||
+        ellipse(x, y, 19.4, 16, 3.6, 1.5)
       );
     }),
   },
@@ -113,17 +112,20 @@ export const DRAWING_TEMPLATES = [
     id: "butterfly",
     label: "Butterfly",
     pixels: raster((x, y) => {
-      const wings =
-        ellipse(x, y, 9, 7, 6, 5) ||
-        ellipse(x, y, 23, 7, 6, 5) ||
-        ellipse(x, y, 11, 14.5, 4.5, 3.5) ||
-        ellipse(x, y, 21, 14.5, 4.5, 3.5);
-      const spots =
-        ellipse(x, y, 8.5, 6.5, 2, 1.5) ||
-        ellipse(x, y, 23.5, 6.5, 2, 1.5) ||
-        ellipse(x, y, 10.5, 14.5, 1.5) ||
-        ellipse(x, y, 21.5, 14.5, 1.5);
-      return (wings && !spots) || ellipse(x, y, 16, 11, 1, 7) || line(x, y, 16, 5, 13, 1) || line(x, y, 16, 5, 19, 1);
+      const wing = (px: number, py: number) => {
+        const upper = ellipse(px, py, 8.6, 7, 6.4, 5.6);
+        const lower = ellipse(px, py, 10.6, 15, 4.4, 3.7);
+        const hollow = ellipse(px, py, 8.6, 7, 4.7, 3.9) || ellipse(px, py, 10.6, 15, 2.8, 2.1);
+        const dots = ellipse(px, py, 8.6, 7, 1.7, 1.4);
+        return ((upper || lower) && !hollow) || dots;
+      };
+      return (
+        wing(x, y) ||
+        wing(32 - x, y) ||
+        ellipse(x, y, 16, 11, 1.3, 6.6) ||
+        line(x, y, 16, 5, 13, 1.5, 1) ||
+        line(x, y, 16, 5, 19, 1.5, 1)
+      );
     }),
   },
   {
@@ -155,24 +157,25 @@ export const DRAWING_TEMPLATES = [
     id: "cat",
     label: "Cat",
     pixels: raster((x, y) => {
-      const outline =
-        catHead(x, y) && (!catHead(x - 1.2, y) || !catHead(x + 1.2, y) || !catHead(x, y - 1.2) || !catHead(x, y + 1.2));
-      const eyes = ellipse(x, y, 12, 9, 1, 1.5) || ellipse(x, y, 20, 9, 1, 1.5);
+      const edge =
+        catHead(x, y) && !(catHead(x - 1.4, y) && catHead(x + 1.4, y) && catHead(x, y - 1.4) && catHead(x, y + 1.4));
       const nose = polygon([
-        [14.5, 12],
-        [17.5, 12],
-        [16, 13.5],
+        [14.6, 12],
+        [17.4, 12],
+        [16, 13.6],
       ])(x, y);
       return (
-        outline ||
-        eyes ||
+        edge ||
+        ellipse(x, y, 12, 9.2, 1.3, 1.8) ||
+        ellipse(x, y, 20, 9.2, 1.3, 1.8) ||
         nose ||
-        line(x, y, 16, 13, 14, 15) ||
-        line(x, y, 16, 13, 18, 15) ||
-        line(x, y, 10, 12, 2, 10.5) ||
-        line(x, y, 10, 13.5, 2, 14.5) ||
-        line(x, y, 22, 12, 30, 10.5) ||
-        line(x, y, 22, 13.5, 30, 14.5)
+        line(x, y, 16, 13.6, 16, 14.6, 1) ||
+        line(x, y, 16, 14.6, 13.6, 15.8, 1) ||
+        line(x, y, 16, 14.6, 18.4, 15.8, 1) ||
+        line(x, y, 5.4, 11.5, 0.8, 10, 0.9) ||
+        line(x, y, 5.4, 14.5, 0.8, 16, 0.9) ||
+        line(x, y, 26.6, 11.5, 31.2, 10, 0.9) ||
+        line(x, y, 26.6, 14.5, 31.2, 16, 0.9)
       );
     }),
   },
@@ -180,47 +183,42 @@ export const DRAWING_TEMPLATES = [
     id: "sun",
     label: "Sun",
     pixels: raster((x, y) => {
-      const rays = Array.from({ length: 8 }, (_, i) => {
-        const a = (i * Math.PI) / 4;
-        return line(
-          x,
-          y,
-          16 + Math.cos(a) * 6.5,
-          10 + Math.sin(a) * 6.5,
-          16 + Math.cos(a) * 9.3,
-          10 + Math.sin(a) * 9.3,
-          1.4,
-        );
-      }).some(Boolean);
-      return ellipse(x, y, 16, 10, 4.2) || rays;
+      const burst = polygon(
+        Array.from({ length: 32 }, (_, i) => {
+          const a = -Math.PI / 2 + (i * Math.PI) / 16;
+          const r = i % 2 ? 6.4 : 9.6;
+          return [16 + Math.cos(a) * r, 10 + Math.sin(a) * r] as const;
+        }),
+      );
+      return (burst(x, y) && !ellipse(x, y, 16, 10, 5.4)) || ellipse(x, y, 16, 10, 3.8);
     }),
   },
   {
     id: "moon",
     label: "Moon & stars",
-    pixels: raster(
-      (x, y) =>
-        (ellipse(x, y, 13, 10, 8) && !ellipse(x, y, 17.5, 8, 7)) ||
-        ellipse(x, y, 25, 4, 1) ||
-        ellipse(x, y, 28, 11, 0.9) ||
-        ellipse(x, y, 23, 16, 1.1),
-    ),
+    pixels: raster((x, y) => {
+      const sparkle = (cx: number, cy: number, r: number) =>
+        line(x, y, cx, cy - r, cx, cy + r, 1.2) || line(x, y, cx - r, cy, cx + r, cy, 1.2);
+      return (
+        (ellipse(x, y, 12.5, 10, 8.5) && !ellipse(x, y, 17.2, 8, 7.4)) ||
+        sparkle(25.5, 4.5, 2.4) ||
+        sparkle(28.5, 11.5, 1.6) ||
+        sparkle(22.5, 16, 2)
+      );
+    }),
   },
   {
     id: "house",
     label: "House",
-    pixels: raster(
-      (x, y) =>
-        line(x, y, 5, 9.5, 16, 2.5, 1.4) ||
-        line(x, y, 27, 9.5, 16, 2.5, 1.4) ||
-        line(x, y, 8, 8.5, 8, 18.5, 1.4) ||
-        line(x, y, 24, 8.5, 24, 18.5, 1.4) ||
-        line(x, y, 7.3, 18.5, 24.7, 18.5, 1.4) ||
-        (x >= 14 && x <= 18 && y >= 12 && y <= 18.5) ||
-        (x >= 10.5 && x <= 12.5 && y >= 11 && y <= 13) ||
-        (x >= 19.5 && x <= 21.5 && y >= 11 && y <= 13) ||
-        (x >= 21 && x <= 23.5 && y >= 3 && y <= 6.5),
-    ),
+    pixels: raster((x, y) => {
+      const roof = line(x, y, 3, 10, 16, 2.2, 1.9) || line(x, y, 29, 10, 16, 2.2, 1.9) || ellipse(x, y, 16, 7, 1.4);
+      const walls = y >= 10 && y <= 18.5 && x >= 6 && x <= 26 && (x <= 7.5 || x >= 24.5 || y >= 17.2);
+      const door = x >= 13.5 && x <= 18.5 && y >= 12.5 && y <= 18.5;
+      const window = (cx: number) =>
+        x >= cx - 2 && x <= cx + 2 && y >= 12 && y <= 15.5 && (x < cx - 0.8 || x > cx + 0.8) && (y < 13.1 || y > 14.4);
+      const chimney = x >= 22 && x <= 24.8 && y >= 2.2 && y <= 6;
+      return roof || walls || door || window(10.3) || window(21.7) || chimney;
+    }),
   },
   {
     id: "tree",
@@ -249,8 +247,11 @@ export const DRAWING_TEMPLATES = [
     id: "rainbow",
     label: "Rainbow",
     pixels: raster((x, y) => {
-      const d = Math.hypot(x - 16, y - 19);
-      return y <= 19.5 && ((d >= 12 && d <= 14.3) || (d >= 8.7 && d <= 11) || (d >= 5.4 && d <= 7.7));
+      const d = Math.hypot(x - 16, y - 16.5);
+      const bands = y <= 16.5 && ((d >= 12.2 && d <= 14.8) || (d >= 8.4 && d <= 11) || (d >= 4.6 && d <= 7.2));
+      const cloud = (px: number) =>
+        ellipse(px, y, 3.6, 17.6, 3.2, 2) || ellipse(px, y, 7.2, 17.8, 2.8, 1.8) || ellipse(px, y, 5.2, 16, 2.4, 2);
+      return bands || cloud(x) || cloud(32 - x);
     }),
   },
   {
