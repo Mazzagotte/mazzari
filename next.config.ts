@@ -8,6 +8,8 @@ const config: NextConfig = {
         ? ".next-production"
         : ".next",
   outputFileTracingRoot: process.cwd(),
+  // The Windows launcher sets this to run a trimmed server (node server.js) instead of `next start`.
+  ...(process.env.MAZZARI_STANDALONE === "1" ? { output: "standalone" as const } : {}),
 };
 
 export default config;

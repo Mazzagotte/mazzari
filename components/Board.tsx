@@ -41,8 +41,8 @@ function BoardComponent({
           const cells = boardCells(line, columns);
           return (
             <div
-              className={`flap-row${r > 0 && sectionStarts.includes(r) ? " section-start" : ""}${emphasizeClock && r === 0 ? " clock-row" : ""}`}
               key={r}
+              className={`flap-row${r > 0 && sectionStarts.includes(r) ? " section-start" : ""}${emphasizeClock && r === 0 ? " clock-row" : ""}`}
             >
               {Array.from({ length: columns }, (_, c) => (
                 <Flap
@@ -61,4 +61,26 @@ function BoardComponent({
     </div>
   );
 }
-export const Board = memo(BoardComponent);
+const sameLines = (a: string[], b: string[]) => a.length === b.length && a.every((line, index) => line === b[index]);
+const samePixels = (a?: boolean[][], b?: boolean[][]) =>
+  a === b ||
+  (!!a &&
+    !!b &&
+    a.length === b.length &&
+    a.every((row, r) => row.length === b[r].length && row.every((v, c) => v === b[r][c])));
+// `lines` is rebuilt on every render of the page, so compare it by content or the memo never hits.
+export const Board = memo(
+  BoardComponent,
+  (a, b) =>
+    sameLines(a.lines, b.lines) &&
+    sameLines((a.sectionStarts ?? []).map(String), (b.sectionStarts ?? []).map(String)) &&
+    samePixels(a.pixels, b.pixels) &&
+    sameLines(a.artSource ?? [], b.artSource ?? []) &&
+    a.description === b.description &&
+    a.reveal === b.reveal &&
+    a.columns === b.columns &&
+    a.speed === b.speed &&
+    a.onFlip === b.onFlip &&
+    a.reducedMotion === b.reducedMotion &&
+    a.emphasizeClock === b.emphasizeClock,
+);

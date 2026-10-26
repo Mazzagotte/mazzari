@@ -33,6 +33,7 @@ export type Settings = {
   eveningEnd: string;
   eveningBrightness: number;
   keepAwake: boolean;
+  burnInProtection: boolean;
   returnToDailyAt: number;
   finalScoreHours: number;
 };
@@ -67,6 +68,7 @@ export const DEFAULTS: Settings = {
   eveningEnd: "07:00",
   eveningBrightness: 0.45,
   keepAwake: false,
+  burnInProtection: false,
   returnToDailyAt: 0,
   finalScoreHours: 24,
 };

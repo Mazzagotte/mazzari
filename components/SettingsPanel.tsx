@@ -419,6 +419,20 @@ export function SettingsPanel({
                   </p>
                 </>
               )}
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={settings.burnInProtection}
+                  onChange={(e) => update("burnInProtection", e.target.checked)}
+                />
+                Burn-in protection
+              </label>
+              {settings.burnInProtection && (
+                <p className="hint">
+                  Slowly drifts the whole instrument face by a few pixels over about ten minutes so static elements do
+                  not stay on the same pixels. Ignored when reduced motion is on.
+                </p>
+              )}
               <h3>SOUND & MOTION</h3>
               <label className="check">
                 <input

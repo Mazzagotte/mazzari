@@ -1,19 +1,36 @@
 param(
     [switch]$Kiosk,
-    [switch]$NoBrowser
+    [switch]$NoBrowser,
+    # Kiosk only: hour (0-23) to restart Chrome each night so a long-running browser can't leak memory. -1 disables.
+    [int]$RestartHour = 4
 )
 
 $ErrorActionPreference = "Stop"
 Set-Location -LiteralPath $PSScriptRoot
 $url = "http://localhost:1000"
+$serverEntry = Join-Path $PSScriptRoot ".next-production\standalone\server.js"
 
 function Test-Display {
     try {
         $health = Invoke-RestMethod -Uri "$url/api/health" -TimeoutSec 3
         return $health.app -eq "splitflap-smart"
-    } catch [System.Net.WebException] {
+    } catch {
         return $false
     }
+}
+
+# True when the standalone build is missing or any source file is newer than it.
+function Test-BuildStale {
+    if (-not (Test-Path -LiteralPath $serverEntry)) { return $true }
+    $built = (Get-Item -LiteralPath $serverEntry).LastWriteTime
+    $inputs = @("app", "components", "hooks", "lib", "public") | Where-Object { Test-Path -LiteralPath $_ }
+    $newest = Get-ChildItem -LiteralPath $inputs -Recurse -File |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($newest -and $newest.LastWriteTime -gt $built) { return $true }
+    foreach ($file in "package.json", "package-lock.json", "next.config.ts", "tsconfig.json") {
+        if ((Test-Path -LiteralPath $file) -and (Get-Item -LiteralPath $file).LastWriteTime -gt $built) { return $true }
+    }
+    return $false
 }
 
 try {
@@ -47,12 +64,23 @@ try {
             if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed." }
         }
 
-        Write-Host "Building the production display..."
-        & npm.cmd run build
-        if ($LASTEXITCODE -ne 0) { throw "Production build failed. The server was not started." }
+        if (Test-BuildStale) {
+            Write-Host "Building the production display..."
+            $env:MAZZARI_STANDALONE = "1"
+            & npm.cmd run build
+            $buildExit = $LASTEXITCODE
+            Remove-Item Env:\MAZZARI_STANDALONE
+            if ($buildExit -ne 0) { throw "Production build failed. The server was not started." }
+            # The standalone server does not include static assets or public files.
+            $standalone = Join-Path $PSScriptRoot ".next-production\standalone"
+            Copy-Item -LiteralPath ".next-production\static" -Destination "$standalone\.next-production\static" -Recurse -Force
+            if (Test-Path -LiteralPath "public") { Copy-Item -LiteralPath "public" -Destination "$standalone\public" -Recurse -Force }
+        } else {
+            Write-Host "Build is up to date; skipping rebuild."
+        }
 
         $server = Start-Process -FilePath $env:ComSpec -WorkingDirectory $PSScriptRoot `
-            -ArgumentList '/k "npm.cmd start"' -PassThru
+            -ArgumentList '/k "set PORT=1000&& set HOSTNAME=0.0.0.0&& node .next-production\standalone\server.js"' -PassThru
         $deadline = (Get-Date).AddSeconds(90)
         $ready = $false
         do {
@@ -68,9 +96,25 @@ try {
     if (-not $NoBrowser) {
         if ($Kiosk) {
             # A separate profile prevents an existing Chrome session from ignoring kiosk flags.
-            $profile = Join-Path $env:LOCALAPPDATA "FLAP\Chrome"
-            Start-Process -FilePath $chrome -ArgumentList "--user-data-dir=`"$profile`" --kiosk --no-first-run $url"
+            $chromeProfile = Join-Path $env:LOCALAPPDATA "FLAP\Chrome"
+            $chromeArgs = "--user-data-dir=`"$chromeProfile`" --kiosk --no-first-run $url"
+            $browser = Start-Process -FilePath $chrome -ArgumentList $chromeArgs -PassThru
             Write-Host "Chrome kiosk opened. Press Alt+F4 to exit. Its settings are separate from your normal browser."
+            if ($RestartHour -ge 0 -and $RestartHour -le 23) {
+                Write-Host "Chrome restarts nightly at $($RestartHour):00 to keep memory low. Keep this window open (-RestartHour -1 disables)."
+                $lastRestart = (Get-Date).Date
+                while ($true) {
+                    Start-Sleep -Seconds 30
+                    if ($browser.HasExited) { break }
+                    $time = Get-Date
+                    if ($time.Hour -eq $RestartHour -and $time.Date -ne $lastRestart) {
+                        $lastRestart = $time.Date
+                        Stop-Process -Id $browser.Id -Force -ErrorAction SilentlyContinue
+                        Start-Sleep -Seconds 3
+                        $browser = Start-Process -FilePath $chrome -ArgumentList $chromeArgs -PassThru
+                    }
+                }
+            }
         } else {
             Start-Process $url
         }

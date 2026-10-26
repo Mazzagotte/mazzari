@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isWeather } from "../../../lib/feeds";
+import { cached } from "../../../lib/serverCache";
 export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams;
@@ -19,10 +21,18 @@ export async function GET(req: NextRequest) {
     forecast_days: "2",
   }).forEach(([key, value]) => url.searchParams.set(key, value));
   try {
-    const response = await fetch(url, { next: { revalidate: 600 }, signal: AbortSignal.timeout(8000) });
-    if (!response.ok) throw new Error(`Weather service ${response.status}`);
-    return NextResponse.json(await response.json());
-  } catch {
+    const data = await cached(url.toString(), { ttlMs: 300000, staleMs: 3600000 }, async () => {
+      const response = await fetch(url, { next: { revalidate: 600 }, signal: AbortSignal.timeout(8000) });
+      if (!response.ok) throw new Error(`Weather service ${response.status}`);
+      const json: unknown = await response.json();
+      if (!isWeather(json)) throw new Error("Unexpected weather response shape");
+      return json;
+    });
+    return NextResponse.json(data, {
+      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
+    });
+  } catch (error) {
+    console.error("Weather unavailable", error);
     return NextResponse.json({ error: "Weather unavailable" }, { status: 503 });
   }
 }
