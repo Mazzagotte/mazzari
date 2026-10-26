@@ -6,25 +6,15 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
   "preview_urls": false,
-  "routes": [
-    {"pattern": "mazzagotte.dev", "custom_domain": true}
-  ],
+  "routes": [{ "pattern": "mazzagotte.dev", "custom_domain": true }],
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
-  "services": [
-    {"binding": "WORKER_SELF_REFERENCE", "service": "mazzari"}
-  ],
-  "r2_buckets": [
-    {"binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "mazzari-cache"}
-  ],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "mazzari" }],
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "mazzari-cache" }],
   "durable_objects": {
-    "bindings": [
-      {"name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler"}
-    ]
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }],
   },
-  "migrations": [
-    {"tag": "v1", "new_sqlite_classes": ["DOQueueHandler"]}
-  ]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
 }
