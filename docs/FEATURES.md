@@ -99,7 +99,7 @@ Missing fields are omitted rather than guessed; supplied zero counts and timeout
 
 ### Cloudflare Workers and GitHub
 
-The cloud deployment uses OpenNext on Cloudflare Workers, with the private GitHub repository as its source. The Worker name is `mazzari`; its custom domain is `https://mazzagotte.dev`. Cloudflare manages the domain's HTTPS certificate. Browser settings remain local to each origin: use Backup & Restore to transfer preferences from localhost to the HTTPS site. Publishing the application does not publish your browser's saved messages.
+The cloud deployment uses OpenNext on Cloudflare Workers, with the private GitHub repository as its source. The Worker name is `mazzari`; its custom domain is `https://splitflap.mazzagotte.dev` (moved from the bare `mazzagotte.dev`, which now hosts the project hub). Cloudflare manages the domain's HTTPS certificate. Browser settings remain local to each origin: use Backup & Restore to transfer preferences from localhost to the HTTPS site. Publishing the application does not publish your browser's saved messages.
 
 Cloudflare Workers Builds configuration (repository root):
 
