@@ -11,7 +11,12 @@ export function boardText(input: string): string {
   return boardCells(input).join("");
 }
 
-export function boardLayout(lines: string[], rotationLines: string[] = lines, sectionStarts: number[] = []) {
+export function boardLayout(
+  lines: string[],
+  rotationLines: string[] = lines,
+  sectionStarts: number[] = [],
+  maxColumns = MAX_COLUMNS,
+) {
   const visible: string[] = [],
     sections: number[] = [],
     // The index in `lines` that each visible line came from, so callers can keep per-line metadata aligned.
@@ -19,13 +24,13 @@ export function boardLayout(lines: string[], rotationLines: string[] = lines, se
   let section = false;
   for (let index = 0; index < lines.length; index++) {
     if (sectionStarts.includes(index)) section = true;
-    const line = boardText(lines[index]);
+    const line = boardCells(lines[index], maxColumns).join("");
     if (!line.trim()) continue;
     if (section && visible.length) sections.push(visible.length);
     section = false;
     visible.push(line);
     sources.push(index);
   }
-  const columns = Math.max(1, ...[...visible, ...rotationLines].map((line) => boardCells(line).length));
+  const columns = Math.max(1, ...[...visible, ...rotationLines].map((line) => boardCells(line, maxColumns).length));
   return { lines: visible, columns, sectionStarts: sections, sources };
 }

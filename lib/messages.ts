@@ -11,7 +11,7 @@ export const MESSAGE_ROWS = 4;
 export const MESSAGE_LIMIT = 240;
 const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
-export function messageLines(text: string): string[] {
+export function messageLines(text: string, width = 24): string[] {
   const clean = text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -22,13 +22,13 @@ export function messageLines(text: string): string[] {
   for (const paragraph of clean.split("\n")) {
     let line = "";
     for (let word of paragraph.trim().split(/\s+/).filter(Boolean)) {
-      if (line && line.length + 1 + word.length > 24) {
+      if (line && line.length + 1 + word.length > width) {
         result.push(line);
         line = "";
       }
-      while (word.length > 24) {
-        result.push(word.slice(0, 24));
-        word = word.slice(24);
+      while (word.length > width) {
+        result.push(word.slice(0, width));
+        word = word.slice(width);
       }
       if (word) line = line ? `${line} ${word}` : word;
     }
@@ -37,8 +37,8 @@ export function messageLines(text: string): string[] {
   return result;
 }
 
-export function messagePages(text: string): string[][] {
-  const lines = messageLines(text);
+export function messagePages(text: string, width = 24): string[][] {
+  const lines = messageLines(text, width);
   const pages: string[][] = [];
   for (let i = 0; i < lines.length; i += MESSAGE_ROWS) pages.push(lines.slice(i, i + MESSAGE_ROWS));
   return pages;
@@ -94,7 +94,7 @@ export function activeMessages(messages: PersonalMessage[], now: Date, zone: str
   );
 }
 
-export function rotatingMessage(messages: PersonalMessage[], tick: number): string[] | null {
-  const cards = messages.flatMap((message) => messagePages(message.text));
+export function rotatingMessage(messages: PersonalMessage[], tick: number, width = 24): string[] | null {
+  const cards = messages.flatMap((message) => messagePages(message.text, width));
   return cards.length ? cards[tick % cards.length] : null;
 }

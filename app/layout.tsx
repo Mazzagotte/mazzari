@@ -12,7 +12,15 @@ export const metadata: Metadata = {
   title: "MAZZARI No. 1 / Mazzagotte Instrument Company",
   description:
     "An electromechanical-inspired information board by Mazzagotte Instrument Company. Precision in every flip.",
-  icons: { icon: "/mazzari-favicon.webp" },
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-64.png", sizes: "64x64", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 export const viewport: Viewport = {
   width: "device-width",

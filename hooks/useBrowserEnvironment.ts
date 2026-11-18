@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
 
+const NARROW_QUERY = "(max-width: 600px) and (orientation: portrait)";
+
 export function useBrowserEnvironment() {
   const [fullscreen, setFullscreen] = useState(false);
   const [canFullscreen, setCanFullscreen] = useState(false);
   const [systemMotion, setSystemMotion] = useState(false);
+  const [narrow, setNarrow] = useState(false);
   useEffect(() => {
+    // Portrait phones get a narrower board with bigger letters.
+    const phone = matchMedia(NARROW_QUERY);
+    setNarrow(phone.matches);
+    const narrowChange = () => setNarrow(phone.matches);
+    phone.addEventListener("change", narrowChange);
     setCanFullscreen(document.fullscreenEnabled && typeof document.documentElement.requestFullscreen === "function");
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     setSystemMotion(media.matches);
@@ -19,10 +27,11 @@ export function useBrowserEnvironment() {
     media.addEventListener("change", motion);
     document.addEventListener("fullscreenchange", full);
     return () => {
+      phone.removeEventListener("change", narrowChange);
       document.removeEventListener("visibilitychange", visibility);
       media.removeEventListener("change", motion);
       document.removeEventListener("fullscreenchange", full);
     };
   }, []);
-  return { fullscreen, canFullscreen, systemMotion };
+  return { fullscreen, canFullscreen, systemMotion, narrow };
 }

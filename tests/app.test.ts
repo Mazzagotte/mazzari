@@ -239,3 +239,52 @@ test("only sports status and forecast rows carry tones, aligned with visible lin
   assert.equal(board.tones[note], undefined);
   assert.equal(board.tones[0], undefined);
 });
+
+test("a 16-column phone board wraps everything to fit and gives the league its own row", () => {
+  const now = Date.parse("2026-11-18T17:00:00Z");
+  const settings = {
+    ...DEFAULTS,
+    leagues: ["mlb" as const],
+    favoritesByLeague: { ...DEFAULTS.favoritesByLeague, mlb: "" },
+  };
+  const game = {
+    id: "g",
+    date: "2026-11-18T23:00:00Z",
+    state: "post",
+    status: "FINAL",
+    teams: [
+      { abbr: "TOR", score: "10", homeAway: "away" },
+      { abbr: "NYY", score: "12", homeAway: "home" },
+    ],
+    essentialDetails: ["WORLD SERIES GAME 7"],
+  };
+  const sections = buildSportsSections(
+    settings,
+    { mlb: { data: [game] as never, updated: now, failed: false } },
+    {},
+    {},
+    now,
+    16,
+  );
+  for (const tick of [0, 1, 2, 3]) {
+    const board = composeBoard({
+      settings,
+      now: new Date(now),
+      tick,
+      weather: { data: weather, updated: now, failed: false },
+      weatherState: "LIVE",
+      sportsSections: sections,
+      sportsStates: ["LIVE"],
+      message: ["SEE YOU AT THE LANES"],
+      messages: [{ text: "SEE YOU AT THE LANES TONIGHT" }],
+      width: 16,
+    });
+    assert.ok(board.layout.columns <= 16);
+    assert.ok(
+      board.layout.lines.every((line) => line.length <= 16),
+      board.layout.lines.join(" | "),
+    );
+    assert.ok(board.layout.lines.includes("MLB"));
+    assert.ok(board.layout.lines.includes("TOR 10 - NYY 12"));
+  }
+});

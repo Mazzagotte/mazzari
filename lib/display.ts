@@ -51,7 +51,12 @@ export function orderGames(games: Game[], favorites: string, favoritesOnly = fal
     .sort((a, b) => rank(a) - rank(b) || (a.date || "").localeCompare(b.date || ""));
 }
 
-export function gamePages(game: Game, zone: string, essentialOnly = false): { matchup: string[]; status: string[] } {
+export function gamePages(
+  game: Game,
+  zone: string,
+  essentialOnly = false,
+  width = 24,
+): { matchup: string[]; status: string[] } {
   const away = game.teams.find((team) => team.homeAway === "away") || game.teams[0];
   const home = game.teams.find((team) => team.homeAway === "home") || game.teams[1];
   const exceptional = /DELAY|POSTPON|SUSPEND|CANCEL|ABANDON|FORFEIT/i.test(game.status);
@@ -77,8 +82,10 @@ export function gamePages(game: Game, zone: string, essentialOnly = false): { ma
     detail = `${day} ${time}`;
   }
   const state = game.state === "in" ? "LIVE" : game.state === "post" ? "FINAL" : "NEXT";
-  const heading = pages(exceptional || detail.toUpperCase().startsWith(state) ? detail : `${state} ${detail}`);
-  const extra = (essentialOnly ? game.essentialDetails || [] : game.details || []).flatMap((item) => pages(item));
+  const heading = pages(exceptional || detail.toUpperCase().startsWith(state) ? detail : `${state} ${detail}`, width);
+  const extra = (essentialOnly ? game.essentialDetails || [] : game.details || []).flatMap((item) =>
+    pages(item, width),
+  );
   const status = [...heading];
   // Repeat the clock/status between detail cards so a long rotation retains game context.
   for (const item of extra) {
@@ -88,13 +95,13 @@ export function gamePages(game: Game, zone: string, essentialOnly = false): { ma
     const priority = game.priorityDetail.toUpperCase();
     const others = extra.filter((item) => item !== priority);
     return {
-      matchup: pages(matchup),
+      matchup: pages(matchup, width),
       status: others.length
         ? others.flatMap((item) => [...heading, priority, ...heading, item])
         : [...heading, priority],
     };
   }
-  return { matchup: pages(matchup), status };
+  return { matchup: pages(matchup, width), status };
 }
 
 export function selectGamePage(

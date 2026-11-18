@@ -14,7 +14,10 @@ export function buildSportsSections(
   schedules: ScheduleFeeds,
   finals: FinalCache,
   nowMs: number,
+  width = MAX_COLUMNS,
 ) {
+  // On a narrow board the league keeps a row of its own; there's height to spare but not width.
+  const tagged = width >= MAX_COLUMNS;
   return settings.leagues.map((league) => {
     const feed = sports[league] || emptyFeed<Game[]>();
     const favorites = settings.favoritesByLeague[league];
@@ -39,9 +42,11 @@ export function buildSportsSections(
       schedule,
       hasFavorites: !!key,
       entries: games.map((game) => {
-        const pagesForGame = gamePages(game, settings.timezone, settings.essentialDetails);
+        const pagesForGame = gamePages(game, settings.timezone, settings.essentialDetails, width);
         // The league rides on the matchup line ("MLB TOR AT NYY") instead of taking a row of its own.
-        return { ...pagesForGame, matchup: pages(`${leagueLabel(league)} ${pagesForGame.matchup.join(" ")}`) };
+        return tagged
+          ? { ...pagesForGame, matchup: pages(`${leagueLabel(league)} ${pagesForGame.matchup.join(" ")}`, width) }
+          : pagesForGame;
       }),
     };
   });
@@ -58,6 +63,8 @@ type BoardInput = {
   sportsStates: string[];
   message: string[] | null | undefined;
   messages: { text: string }[];
+  /** Board width in columns: 24, or fewer on a portrait phone. */
+  width?: number;
 };
 
 // Builds the visible board lines for the current rotation tick, plus the lines used to size the grid.
@@ -71,10 +78,11 @@ export function composeBoard({
   sportsStates,
   message,
   messages,
+  width = MAX_COLUMNS,
 }: BoardInput) {
   const current = now || new Date(0);
   const rotate = (text: string) => {
-    const parts = pages(text);
+    const parts = pages(text, width);
     return parts[tick % parts.length];
   };
   const sectionStarts: number[] = [];
@@ -99,29 +107,34 @@ export function composeBoard({
   const unit = "°";
   if (settings.showWeather || settings.showForecast) sectionStarts.push(lines.length);
   if (settings.showWeather) {
+    const feels = `FEELS ${Math.round(w?.apparent_temperature ?? 0)}${unit}`,
+      humidity = `HUM ${Math.round(w?.relative_humidity_2m ?? 0)}%`,
+      feelsHumidity = `${feels} ${humidity}`;
+    // Wind and feels-like alternate; feels-like and humidity split when they won't fit on one row.
+    const details = w
+      ? [
+          `WIND ${Math.round(w.wind_speed_10m)} MPH`,
+          ...(feelsHumidity.length > width ? [feels, humidity] : [feelsHumidity]),
+        ]
+      : [];
     if (w)
       rotationLines.push(
-        ...pages(`${Math.round(w.temperature_2m)}${unit} ${weatherDescription(w.weather_code)}`),
-        `WIND ${Math.round(w.wind_speed_10m)} MPH`,
-        `FEELS ${Math.round(w.apparent_temperature)}${unit} HUM ${Math.round(w.relative_humidity_2m)}%`,
+        ...pages(`${Math.round(w.temperature_2m)}${unit} ${weatherDescription(w.weather_code)}`, width),
+        ...details,
       );
     lines.push(
       w
         ? rotate(`${Math.round(w.temperature_2m)}${unit} ${weatherDescription(w.weather_code)}`)
         : `WEATHER ${weatherState}`,
-      w
-        ? tick % 2
-          ? `WIND ${Math.round(w.wind_speed_10m)} MPH`
-          : `FEELS ${Math.round(w.apparent_temperature)}${unit} HUM ${Math.round(w.relative_humidity_2m)}%`
-        : "",
+      w ? details[(tick + 1) % details.length] : "",
     );
   }
   if (settings.showForecast) {
     if (d) {
-      // High, low and rain share one row; in the rare case that overflows 24 columns, they alternate.
+      // High, low and rain share one row; when that overflows the board's width, they alternate.
       const temps = `HI ${Math.round(d.temperature_2m_max[0])}${unit} LO ${Math.round(d.temperature_2m_min[0])}${unit}`;
       const rain = `RAIN ${Math.round(d.precipitation_probability_max[0])}%`;
-      const parts = `${temps} ${rain}`.length > MAX_COLUMNS ? [temps, rain] : [`${temps} ${rain}`];
+      const parts = `${temps} ${rain}`.length > width ? [temps, rain] : [`${temps} ${rain}`];
       toneKinds.set(lines.length, "forecast");
       lines.push(parts[tick % parts.length]);
       rotationLines.push(...parts);
@@ -138,6 +151,7 @@ export function composeBoard({
     if (selection) {
       rotationLines.push(...entries.flatMap((entry) => [...entry.matchup, ...entry.status]));
       const entry = entries[selection.index];
+      if (width < MAX_COLUMNS) lines.push(leagueLabel(league));
       toneKinds.set(lines.length + 1, "sports-status");
       lines.push(
         entry.matchup[selection.page % entry.matchup.length],
@@ -145,13 +159,12 @@ export function composeBoard({
       );
     } else {
       const scheduleState = feedStatus(hasFavorites, schedule.failed, schedule.updated, current.getTime(), 900000);
-      lines.push(
-        `${leagueLabel(league)} ${
-          settings.favoritesOnly && hasFavorites && !schedule.data
-            ? `SCHEDULE ${scheduleState}`
-            : `SCORES ${sportsStates[index]}`
-        }`,
-      );
+      const state =
+        settings.favoritesOnly && hasFavorites && !schedule.data
+          ? `SCHEDULE ${scheduleState}`
+          : `SCORES ${sportsStates[index]}`;
+      if (width < MAX_COLUMNS) lines.push(leagueLabel(league), state);
+      else lines.push(`${leagueLabel(league)} ${state}`);
     }
   });
   if (settings.displayMode === "daily" && message) {
@@ -161,14 +174,14 @@ export function composeBoard({
     lines.splice(0, lines.length, ...message);
     toneKinds.clear();
   } else if (settings.displayMode !== "daily") lines.splice(2);
-  const messageLines = messages.flatMap((item) => messagePages(item.text).flat());
+  const messageLines = messages.flatMap((item) => messagePages(item.text, width).flat());
   const sizingLines =
     settings.displayMode === "daily"
       ? [...rotationLines, ...messageLines]
       : settings.displayMode === "messages" && message
         ? messageLines
         : clockLines;
-  const layout = boardLayout(lines, sizingLines, settings.displayMode === "daily" ? sectionStarts : []);
+  const layout = boardLayout(lines, sizingLines, settings.displayMode === "daily" ? sectionStarts : [], width);
   const tones = layout.sources.map((source, row) => {
     const kind = toneKinds.get(source);
     return kind ? lineTones(layout.lines[row], kind) : undefined;

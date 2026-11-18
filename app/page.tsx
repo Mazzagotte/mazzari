@@ -21,6 +21,9 @@ import { useFavoriteSchedules } from "../hooks/useFavoriteSchedules";
 import { useFinals } from "../hooks/useFinals";
 import { useMechanicalSound } from "../hooks/useMechanicalSound";
 import { Settings2, Maximize, Minimize, RefreshCw, Volume2, VolumeX } from "lucide-react";
+import { MAX_COLUMNS } from "../lib/boardLayout";
+
+const PHONE_COLUMNS = 16;
 
 // The panel is large and only needed on demand, so it loads when first opened and skips re-renders while closed.
 const SettingsPanel = memo(dynamic(() => import("../components/SettingsPanel").then((m) => m.SettingsPanel)));
@@ -36,7 +39,9 @@ export default function Home() {
   const { settings, setSettings, ready } = useSettings(now, setNotice);
   const refreshId = manualRefresh + wakeCount;
   const controlsVisible = useControlsVisible(panel);
-  const { fullscreen, canFullscreen, systemMotion } = useBrowserEnvironment();
+  const { fullscreen, canFullscreen, systemMotion, narrow } = useBrowserEnvironment();
+  // A portrait phone shows 16 columns instead of 24, so each letter is about half again as large.
+  const width = narrow ? PHONE_COLUMNS : MAX_COLUMNS;
   const { weather, sports, refreshing } = useLiveFeeds(ready, settings, refreshId, setNow);
   const schedules = useFavoriteSchedules(ready, settings, refreshId);
   const finals = useFinals(ready, sports, settings.favoritesByLeague, setNotice);
@@ -64,7 +69,7 @@ export default function Home() {
   const messages = now ? activeMessages(settings.messages, current, settings.timezone) : [];
   // Re-render every second only when seconds are displayed; otherwise once a minute.
   perSecond.current = settings.showSeconds;
-  const message = rotatingMessage(messages, tick);
+  const message = rotatingMessage(messages, tick, width);
   const weatherState = feedStatus(
     settings.showWeather || settings.showForecast,
     weather.failed,
@@ -74,7 +79,7 @@ export default function Home() {
   );
   const minute = Math.floor((now?.getTime() || 0) / 60_000);
   const sportsSections = useMemo(
-    () => buildSportsSections(settings, sports, schedules, finals, minute * 60_000),
+    () => buildSportsSections(settings, sports, schedules, finals, minute * 60_000, width),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       settings.leagues,
@@ -87,6 +92,7 @@ export default function Home() {
       schedules,
       finals,
       minute,
+      width,
     ],
   );
   const sportsStates = sportsSections.map((section) =>
@@ -102,6 +108,7 @@ export default function Home() {
     sportsStates,
     message,
     messages,
+    width,
   });
   const surprise = now ? activeSurprise(settings.cards, now.getTime()) : undefined;
   const card =
@@ -115,7 +122,9 @@ export default function Home() {
     : "text";
   const layout = drawing || text.layout;
   const clockVisible = !drawing && text.clockVisible;
-  const aspectRatio = drawing ? (1.75 * 12 * (layout.columns / 24)) / layout.lines.length : text.aspectRatio;
+  // Portrait phones have height to spare, so their flaps are drawn taller, closer to a real board's proportions.
+  const aspectRatio =
+    (drawing ? (1.75 * 12 * (layout.columns / 24)) / layout.lines.length : text.aspectRatio) * (narrow ? 0.72 : 1);
   const stageStyle: CSSProperties & { "--fit-width": string } = {
     aspectRatio,
     "--fit-width": `min(100cqw, ${aspectRatio * 100}cqh, 1800px)`,
