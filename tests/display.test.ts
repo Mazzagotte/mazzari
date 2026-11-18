@@ -588,3 +588,30 @@ test("flaps run in order toward the target and never flash symbols", () => {
     assert.ok(run.slice(0, -1).every((char) => /[A-Z0-9]/.test(char)));
   }
 });
+
+test("status rows get colored flaps; nothing else does", async () => {
+  const { lineTones } = await import("../lib/tones.ts");
+  const at = (line: string, kind: "sports-status" | "forecast") =>
+    lineTones(line, kind)
+      .map((tone) => (tone === "live" ? "L" : tone === "alert" ? "A" : "."))
+      .join("");
+  assert.equal(at("LIVE BOT 7TH", "sports-status"), "LLLL........");
+  assert.equal(at("RAIN DELAY", "sports-status"), "AAAAAAAAAA");
+  assert.equal(at("POSTPONED", "sports-status"), "AAAAAAAAA");
+  assert.equal(at("FINAL", "sports-status"), ".....");
+  assert.equal(at("HI 47° LO 34° RAIN 75%", "forecast"), "...................AAA");
+  assert.equal(at("HI 47° LO 34° RAIN 60%", "forecast"), "...................AAA");
+  assert.equal(at("HI 47° LO 34° RAIN 59%", "forecast"), "......................");
+  assert.equal(at("RAIN 100%", "forecast"), ".....AAAA");
+  assert.equal(at("LIVE", "forecast"), "....");
+});
+
+test("the clatter grows with how many flaps are moving", async () => {
+  const { clatterLevel } = await import("../lib/mechanicalAudio.ts");
+  const one = clatterLevel(1),
+    board = clatterLevel(150);
+  assert.ok(board.scale > one.scale);
+  assert.ok(board.gapMs < one.gapMs);
+  assert.ok(board.scale <= 1.4 && one.scale >= 0.55);
+  assert.deepEqual(clatterLevel(-5), clatterLevel(0));
+});

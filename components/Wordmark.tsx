@@ -1,9 +1,8 @@
-import Image from "next/image";
-
+// The MAZZARI lockup, drawn like mazzagotte.dev's M·III mark: a serif name between two rules.
 export function Wordmark() {
   return (
     <h1 className="brandmark">
-      <Image src="/mazzari-logo.png" width={500} height={500} alt="MAZZARI" priority />
+      <span className="wordmark">MAZZARI</span>
     </h1>
   );
 }

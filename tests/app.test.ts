@@ -196,3 +196,46 @@ test("burn-in protection defaults off and validates as a boolean", () => {
   assert.equal(restoreSettings({ burnInProtection: true }).burnInProtection, true);
   assert.throws(() => restoreSettings({ burnInProtection: "yes" }));
 });
+
+test("only sports status and forecast rows carry tones, aligned with visible lines", () => {
+  const rainy = { ...weather, daily: { ...weather.daily, precipitation_probability_max: [80] } };
+  const now = Date.parse("2026-07-04T20:00:00Z");
+  const settings = { ...DEFAULTS, leagues: ["mlb" as const] };
+  const live = {
+    id: "g",
+    date: "2026-07-04T19:00:00Z",
+    state: "in",
+    status: "LIVE BOT 7TH",
+    teams: [
+      { abbr: "TOR", score: "2", homeAway: "away" },
+      { abbr: "NYY", score: "3", homeAway: "home" },
+    ],
+  };
+  const board = composeBoard({
+    settings,
+    now: new Date(now),
+    tick: 0,
+    weather: { data: rainy, updated: now, failed: false },
+    weatherState: "LIVE",
+    sportsSections: buildSportsSections(
+      settings,
+      { mlb: { data: [live] as never, updated: now, failed: false } },
+      {},
+      {},
+      now,
+    ),
+    sportsStates: ["LIVE"],
+    message: ["LIVE LAUGH LOVE"],
+    messages: [{ text: "LIVE LAUGH LOVE" }],
+  });
+  const { lines } = board.layout;
+  assert.equal(board.tones.length, lines.length);
+  const forecast = lines.findIndex((line) => line.includes("RAIN 80%"));
+  assert.ok(board.tones[forecast]?.includes("alert"));
+  const status = lines.findIndex((line) => line.startsWith("LIVE BOT"));
+  assert.equal(board.tones[status]?.[0], "live");
+  const note = lines.indexOf("LIVE LAUGH LOVE");
+  assert.ok(note > -1);
+  assert.equal(board.tones[note], undefined);
+  assert.equal(board.tones[0], undefined);
+});

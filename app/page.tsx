@@ -158,6 +158,7 @@ export default function Home() {
               sectionStarts={layout.sectionStarts}
               emphasizeClock={clockVisible}
               pixels={drawing?.pixels}
+              tones={drawing ? undefined : text.tones}
               reveal={artwork.reveal}
               artSource={drawing?.source}
               description={

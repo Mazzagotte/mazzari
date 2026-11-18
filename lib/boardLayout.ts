@@ -13,7 +13,9 @@ export function boardText(input: string): string {
 
 export function boardLayout(lines: string[], rotationLines: string[] = lines, sectionStarts: number[] = []) {
   const visible: string[] = [],
-    sections: number[] = [];
+    sections: number[] = [],
+    // The index in `lines` that each visible line came from, so callers can keep per-line metadata aligned.
+    sources: number[] = [];
   let section = false;
   for (let index = 0; index < lines.length; index++) {
     if (sectionStarts.includes(index)) section = true;
@@ -22,7 +24,8 @@ export function boardLayout(lines: string[], rotationLines: string[] = lines, se
     if (section && visible.length) sections.push(visible.length);
     section = false;
     visible.push(line);
+    sources.push(index);
   }
   const columns = Math.max(1, ...[...visible, ...rotationLines].map((line) => boardCells(line).length));
-  return { lines: visible, columns, sectionStarts: sections };
+  return { lines: visible, columns, sectionStarts: sections, sources };
 }

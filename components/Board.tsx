@@ -3,6 +3,7 @@ import { memo, type CSSProperties } from "react";
 import { Flap } from "./Flap";
 import { boardCells, MAX_COLUMNS } from "../lib/boardLayout";
 import { revealDelay, type Reveal } from "../lib/drawing";
+import type { Tone } from "../lib/tones";
 function BoardComponent({
   lines,
   columns = MAX_COLUMNS,
@@ -12,6 +13,7 @@ function BoardComponent({
   sectionStarts = [],
   emphasizeClock = false,
   pixels,
+  tones,
   description,
   reveal = "sweep",
   artSource,
@@ -24,6 +26,7 @@ function BoardComponent({
   sectionStarts?: number[];
   emphasizeClock?: boolean;
   pixels?: boolean[][];
+  tones?: ((Tone | undefined)[] | undefined)[];
   description?: string;
   reveal?: Reveal;
   artSource?: string[];
@@ -48,6 +51,7 @@ function BoardComponent({
                 <Flap
                   key={`${r}-${c}`}
                   char={pixels?.[r]?.[c] ? "#" : cells[c] || " "}
+                  tone={pixels ? undefined : tones?.[r]?.[c]}
                   speed={speed}
                   onFlip={onFlip}
                   reducedMotion={reducedMotion}
@@ -76,6 +80,10 @@ export const Board = memo(
     sameLines(a.lines, b.lines) &&
     sameLines((a.sectionStarts ?? []).map(String), (b.sectionStarts ?? []).map(String)) &&
     samePixels(a.pixels, b.pixels) &&
+    sameLines(
+      (a.tones ?? []).map((row) => (row ?? []).join(",")),
+      (b.tones ?? []).map((row) => (row ?? []).join(",")),
+    ) &&
     sameLines(a.artSource ?? [], b.artSource ?? []) &&
     a.description === b.description &&
     a.reveal === b.reveal &&

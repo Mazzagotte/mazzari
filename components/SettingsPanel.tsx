@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { DEFAULTS, Settings, LEAGUES, LEAGUE_IDS, leagueLabel, type League } from "../lib/config";
 import { X } from "lucide-react";
 import { DisplaySettings, MessageSettings } from "./MessageSettings";
-import Image from "next/image";
 import { MakerWordmark } from "./MakerWordmark";
 import { SettingsBackup } from "./SettingsBackup";
 import { DrawingSettings } from "./DrawingSettings";
@@ -102,7 +101,9 @@ export function SettingsPanel({
       >
         <header>
           <div className="settings-identity">
-            <Image src="/mazzari-logo.png" width={32} height={32} alt="" />
+            <span className="settings-mark" aria-hidden="true">
+              M
+            </span>
             <h2 id="settings-title">Settings</h2>
           </div>
           <button aria-label="Close settings" className="icon-btn" onClick={onClose}>

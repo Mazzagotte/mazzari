@@ -4,6 +4,7 @@ import { favoriteAwareGames, type FinalCache } from "./favoriteGames.ts";
 import { boardLayout, MAX_COLUMNS } from "./boardLayout.ts";
 import { messagePages } from "./messages.ts";
 import { safeTime } from "./clock.ts";
+import { lineTones, type ToneKind } from "./tones.ts";
 import type { Weather } from "./feeds.ts";
 import { emptyFeed, type Feed, type ScheduleFeeds } from "./feedState.ts";
 
@@ -77,6 +78,8 @@ export function composeBoard({
     return parts[tick % parts.length];
   };
   const sectionStarts: number[] = [];
+  // Rows that may carry status colors, by index in `lines`. Messages and drawings never do.
+  const toneKinds = new Map<number, ToneKind>();
   const lines = [
     now
       ? safeTime(current, settings.timezone, {
@@ -119,6 +122,7 @@ export function composeBoard({
       const temps = `HI ${Math.round(d.temperature_2m_max[0])}${unit} LO ${Math.round(d.temperature_2m_min[0])}${unit}`;
       const rain = `RAIN ${Math.round(d.precipitation_probability_max[0])}%`;
       const parts = `${temps} ${rain}`.length > MAX_COLUMNS ? [temps, rain] : [`${temps} ${rain}`];
+      toneKinds.set(lines.length, "forecast");
       lines.push(parts[tick % parts.length]);
       rotationLines.push(...parts);
     } else {
@@ -134,6 +138,7 @@ export function composeBoard({
     if (selection) {
       rotationLines.push(...entries.flatMap((entry) => [...entry.matchup, ...entry.status]));
       const entry = entries[selection.index];
+      toneKinds.set(lines.length + 1, "sports-status");
       lines.push(
         entry.matchup[selection.page % entry.matchup.length],
         entry.status[selection.page % entry.status.length],
@@ -152,8 +157,10 @@ export function composeBoard({
   if (settings.displayMode === "daily" && message) {
     sectionStarts.push(lines.length);
     lines.push(...message);
-  } else if (settings.displayMode === "messages" && message) lines.splice(0, lines.length, ...message);
-  else if (settings.displayMode !== "daily") lines.splice(2);
+  } else if (settings.displayMode === "messages" && message) {
+    lines.splice(0, lines.length, ...message);
+    toneKinds.clear();
+  } else if (settings.displayMode !== "daily") lines.splice(2);
   const messageLines = messages.flatMap((item) => messagePages(item.text).flat());
   const sizingLines =
     settings.displayMode === "daily"
@@ -162,8 +169,12 @@ export function composeBoard({
         ? messageLines
         : clockLines;
   const layout = boardLayout(lines, sizingLines, settings.displayMode === "daily" ? sectionStarts : []);
+  const tones = layout.sources.map((source, row) => {
+    const kind = toneKinds.get(source);
+    return kind ? lineTones(layout.lines[row], kind) : undefined;
+  });
   const clockVisible = settings.displayMode !== "messages" || !message;
   const rowCount = layout.lines.length;
   const aspectRatio = (1.75 * 12 * (layout.columns / 24)) / (rowCount + (clockVisible ? 0.35 : 0));
-  return { layout, clockVisible, aspectRatio };
+  return { layout, clockVisible, aspectRatio, tones };
 }

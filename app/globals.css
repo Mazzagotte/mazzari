@@ -1,14 +1,27 @@
 :root {
+  /* The mazzagotte.dev editorial palette: ink, bone, muted gold and warm hairlines. */
   color-scheme: dark;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #101a12;
-  color: #f3e8d0;
-  --case: #101a12;
-  --olive: #233528;
-  --brass: #d8b77b;
-  --ivory: #f3e8d0;
-  --border: #59634a;
-  --muted: #b8b29f;
+  font-family: var(--sans);
+  background: #0e0e0f;
+  color: #e8e3d8;
+  --sans: "Geist Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --serif: "Bodoni Moda", Didot, Georgia, serif;
+  --flap-face: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --ink: #0e0e0f;
+  --case: #151514;
+  --olive: #1c1b19;
+  --brass: #c8a96a;
+  --gold-ink: #d4b57a;
+  --ivory: #f4f1ea;
+  --hairline: #2b2925;
+  --border: #3d3a34;
+  --muted: #a0988a;
+  /* Status flaps: gold for live, a muted brick red for delays and likely rain. */
+  --flap-live: #c8a96a;
+  --flap-live-ink: #1a1408;
+  --flap-alert: #a8473a;
+  --flap-alert-ink: #f8e9e2;
 }
 * {
   box-sizing: border-box;
@@ -45,19 +58,16 @@ textarea:focus-visible {
   flex-direction: column;
   gap: 12px;
   padding: 18px 28px 16px;
-  background: linear-gradient(115deg, var(--olive), var(--case) 45%, #0c140e);
-  border: 8px solid #101a12;
-  border-radius: 23px;
-  box-shadow:
-    inset 0 1px 0 #62654a66,
-    0 3px 6px #171b1529;
+  background: var(--case);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
 }
 .app::before {
   content: "";
   position: absolute;
-  inset: 5px;
-  border: 1px solid #9b947333;
-  border-radius: 10px;
+  inset: 6px;
+  border: 1px solid #2b292599;
+  border-radius: 6px;
   pointer-events: none;
 }
 .maker-line {
@@ -67,7 +77,7 @@ textarea:focus-visible {
   right: 28px;
   display: flex;
   justify-content: space-between;
-  color: #b6ac8c;
+  color: #a0988a;
   font-size: 8px;
   letter-spacing: 1.4px;
   flex-shrink: 0;
@@ -88,7 +98,7 @@ textarea:focus-visible {
   gap: 12px;
   flex: 1;
   min-height: 0;
-  background: linear-gradient(115deg, var(--olive), var(--case) 45%, #0c140e);
+  background: transparent;
   border-radius: 5px;
 }
 /* Evening dimming: a black overlay fades in instead of a CSS filter, which would re-composite the whole board. */
@@ -105,13 +115,7 @@ textarea:focus-visible {
   position: relative;
   z-index: 11;
 }
-.brandmark img {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  display: block;
-  margin: auto;
-}
+
 .clock-row .flap {
   font-size: var(--clock-font, 3.35cqw);
 }
@@ -125,21 +129,34 @@ textarea:focus-visible {
   align-items: center;
   gap: 10px;
   margin-top: 6px;
-  color: var(--brass);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 3px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
 }
 .model-number span {
-  width: 34px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #c3b18acc);
+  width: 18px;
+  height: 1.5px;
+  background: var(--brass);
 }
-.model-number span:last-child {
-  background: linear-gradient(270deg, transparent, #c3b18acc);
+.wordmark {
+  display: inline-block;
+  padding: 5px 2px;
+  border-top: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  color: var(--ivory);
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  /* Trailing letter-spacing would push the name off-center between the rules. */
+  margin-right: -0.18em;
+  padding-right: calc(2px + 0.18em);
 }
 .company-name {
-  color: #b2b19a;
+  color: #a0988a;
   font-size: 8px;
   letter-spacing: 1.5px;
   margin: 8px 0 0;
@@ -175,15 +192,15 @@ textarea:focus-visible {
 }
 .status-led.connecting,
 .status-led.local {
-  background: #929787;
+  background: #a0988a;
 }
 .actions {
   display: flex;
   gap: 4px;
   padding: 4px;
-  border: 1px solid #a394704d;
+  border: 1px solid #a0988a4d;
   border-radius: 12px;
-  background: linear-gradient(#2a3024cc, #181e17cc);
+  background: linear-gradient(#2b2925cc, #1c1b19cc);
   box-shadow:
     inset 0 1px 0 #ffffff0f,
     0 2px 6px #0006;
@@ -197,7 +214,7 @@ textarea:focus-visible {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 7px 10px;
-  color: #c3bea1;
+  color: #cfc8ba;
   background: transparent;
   font-size: 8px;
   letter-spacing: 1px;
@@ -216,14 +233,14 @@ textarea:focus-visible {
   background: #ffffff1c;
 }
 .actions .settings-button {
-  background: #c3b18a1f;
-  border-color: #a3947066;
+  background: #c8a96a1f;
+  border-color: #a0988a66;
   color: var(--brass);
 }
 .actions button:hover,
 .icon-btn:hover {
   background: #ffffff14;
-  color: #f0e6c6;
+  color: #e8e3d8;
 }
 .actions button:disabled {
   opacity: 0.55;
@@ -260,7 +277,7 @@ textarea:focus-visible {
 }
 .board-footer {
   padding: 1cqw 2px 0;
-  color: #a08c59;
+  color: #8c7246;
 }
 .frame-label span,
 .board-footer span {
@@ -276,14 +293,12 @@ textarea:focus-visible {
   position: relative;
   flex: 1;
   min-height: 0;
-  background: #0f150e;
+  background: #080809;
   padding: 1.1cqw;
-  border: 1px solid #59634a;
-  border-radius: 7px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
   overflow: hidden;
-  box-shadow:
-    inset 0 3px 9px #0008,
-    0 1px 0 #74745b55;
+  box-shadow: inset 0 3px 9px #000a;
 }
 .board::after {
   content: "";
@@ -325,16 +340,30 @@ textarea:focus-visible {
   height: 100%;
   min-width: 0;
   overflow: hidden;
-  background: #233528;
+  /* Face colors live in variables so status flaps (live, alert) can repaint every half, including the turning leaf. */
+  --face-hi: #262522;
+  --face-lo: #1d1c1a;
+  --face-ink: var(--ivory);
+  background: var(--face-lo);
   border-radius: 2px;
-  font-family: "Arial Narrow", "Trebuchet MS", Arial, sans-serif;
-  font-size: var(--flap-font, 2.8cqw);
+  font-family: var(--flap-face);
+  font-size: calc(var(--flap-font, 2.8cqw) * 1.12);
   font-weight: 600;
   line-height: 1;
-  color: var(--ivory);
+  color: var(--face-ink);
   box-shadow:
-    inset 0 1px 0 #69705244,
-    0 1px 2px #0009;
+    inset 0 1px 0 #ffffff0d,
+    0 1px 2px #000c;
+}
+.flap.tone-live {
+  --face-hi: #d1b377;
+  --face-lo: #b89a5e;
+  --face-ink: var(--flap-live-ink);
+}
+.flap.tone-alert {
+  --face-hi: #b14f41;
+  --face-lo: #963d31;
+  --face-ink: var(--flap-alert-ink);
 }
 .flap.unit-flap {
   font-size: calc(var(--flap-font, 2.8cqw) * 0.85);
@@ -345,7 +374,7 @@ textarea:focus-visible {
   inset: 0;
   background: var(--brass);
   color: transparent;
-  box-shadow: inset 0 1px 0 #f3e8d066;
+  box-shadow: inset 0 1px 0 #e8e3d866;
 }
 .drawing-grid {
   display: grid;
@@ -364,7 +393,7 @@ textarea:focus-visible {
   min-height: 0;
   aspect-ratio: 1;
   background: var(--olive);
-  border: 1px solid #59634a;
+  border: 1px solid #5c574e;
   border-radius: 2px;
   touch-action: none;
 }
@@ -409,20 +438,29 @@ textarea:focus-visible {
   overflow: hidden;
 }
 .flap-top {
-  background: linear-gradient(#2d3527, #232a1f 90%, #1e251b);
+  /* Lit from above: brightest at the top edge, falling off toward the hinge. */
+  background: linear-gradient(
+    color-mix(in srgb, var(--face-hi) 100%, #fff 6%),
+    var(--face-hi) 30%,
+    var(--face-lo) 100%
+  );
 }
 .flap-top {
   clip-path: inset(0 0 50%);
 }
 .flap-bottom {
   clip-path: inset(50% 0 0);
-  background: linear-gradient(#1b2119, #181e16 20%, #161c14);
+  /* The upper leaf casts a short shadow just below the hinge. */
+  background:
+    linear-gradient(transparent 50%, #000000a6 50%, #00000040 56%, transparent 64%),
+    linear-gradient(var(--face-lo), color-mix(in srgb, var(--face-lo) 82%, #000));
 }
 .flap-turn {
   clip-path: inset(0 0 50%);
   transform-origin: center;
   backface-visibility: hidden;
-  background: #2b4030;
+  /* Same face as the resting flap, so a turning leaf never flashes a different color. */
+  background: linear-gradient(var(--face-hi), var(--face-lo));
   z-index: 3;
   will-change: transform, opacity;
   animation: flap-turn ease-in both;
@@ -430,12 +468,13 @@ textarea:focus-visible {
 .flap::before {
   content: "";
   position: absolute;
-  top: 50%;
+  /* The hinge: a dark gap between the leaves with a faint lip on the lower one. */
+  top: calc(50% - 1px);
   left: 0;
   right: 0;
-  height: 1px;
-  background: #0b110b;
-  box-shadow: 0 1px 0 #61634a44;
+  height: 2px;
+  background: #030303;
+  box-shadow: 0 1px 0 #ffffff12;
   z-index: 4;
 }
 .flap::after {
@@ -446,9 +485,9 @@ textarea:focus-visible {
   right: 0;
   height: 3px;
   background:
-    linear-gradient(#797153, #797153) left / 1px 3px no-repeat,
-    linear-gradient(#797153, #797153) right / 1px 3px no-repeat;
-  opacity: 0.5;
+    linear-gradient(#8c7246, #8c7246) left / 1px 3px no-repeat,
+    linear-gradient(#8c7246, #8c7246) right / 1px 3px no-repeat;
+  opacity: 0.55;
   z-index: 5;
 }
 @keyframes flap-turn {
@@ -546,15 +585,15 @@ textarea:focus-visible {
 }
 .maker-footer span:last-child {
   font-size: 8px;
-  color: #9c997d;
+  color: #a0988a;
 }
 .notice {
   display: flex;
   justify-content: space-between;
   gap: 10px;
   flex-shrink: 0;
-  background: #3a3020;
-  color: #efcf89;
+  background: #2b2925;
+  color: #e2cc9a;
   padding: 8px 12px;
   font-size: 12px;
 }
@@ -566,17 +605,17 @@ textarea:focus-visible {
 .settings-shade {
   position: fixed;
   inset: 0;
-  background: #05080acc;
+  background: #0e0e0fcc;
   z-index: 20;
   display: flex;
   justify-content: flex-end;
   animation: shade-in 180ms ease-out;
 }
 .settings {
-  --panel: #1b2119;
-  --card: #232a21;
-  --field: #141913;
-  --line: #394133;
+  --panel: #23211e;
+  --card: #2b2925;
+  --field: #151514;
+  --line: #3d3a34;
   height: 100%;
   width: min(500px, 100%);
   min-width: 0;
@@ -636,7 +675,7 @@ textarea:focus-visible {
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: #4a5342 transparent;
+  scrollbar-color: #5c574e transparent;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -665,13 +704,13 @@ textarea:focus-visible {
   transition: border-color 0.15s ease;
 }
 .settings-section[open] {
-  border-color: #4d5844;
+  border-color: #5c574e;
 }
 .settings summary {
   position: relative;
   cursor: pointer;
   list-style: none;
-  color: #f1ecd9;
+  color: #f4f1ea;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
@@ -780,7 +819,7 @@ textarea:focus-visible {
   cursor: not-allowed;
 }
 .selected-city {
-  color: #f1ecd9;
+  color: #f4f1ea;
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 16px;
@@ -802,7 +841,7 @@ textarea:focus-visible {
   width: 100%;
   resize: vertical;
   background: var(--field);
-  color: #f0eddf;
+  color: #f4f1ea;
   border: 1px solid var(--line);
   padding: 11px 12px;
   border-radius: 10px;
@@ -814,7 +853,7 @@ textarea:focus-visible {
 .message-preview pre {
   margin: 0;
   padding: 10px 6px;
-  background: #101a12;
+  background: #151514;
   color: var(--ivory);
   border: 1px solid var(--border);
   font: clamp(8px, 2.5vw, 12px)/1.7 monospace;
@@ -825,7 +864,7 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #dedccb;
+  color: #e8e3d8;
   font-size: 13px;
   font-weight: 500;
   margin: 16px 0;
@@ -836,7 +875,7 @@ textarea:focus-visible {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 11px 12px;
-  color: #f0eddf;
+  color: #f4f1ea;
   width: 100%;
   transition:
     border-color 0.15s ease,
@@ -845,14 +884,14 @@ textarea:focus-visible {
 .settings input:not([type="checkbox"]):not([type="range"]):hover,
 .settings select:hover,
 .settings textarea:hover {
-  border-color: #566049;
+  border-color: #5c574e;
 }
 .settings input:not([type="checkbox"]):not([type="range"]):focus-visible,
 .settings select:focus-visible,
 .settings textarea:focus-visible {
   outline: none;
   border-color: var(--brass);
-  box-shadow: 0 0 0 3px #c3b18a33;
+  box-shadow: 0 0 0 3px #c8a96a33;
 }
 .settings select {
   appearance: none;
@@ -886,8 +925,8 @@ textarea:focus-visible {
   flex-shrink: 0;
   margin: 0;
   border-radius: 999px;
-  background: #3a4234;
-  border: 1px solid #4a5342;
+  background: #3d3a34;
+  border: 1px solid #5c574e;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -899,13 +938,13 @@ textarea:focus-visible {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #d9d3bd;
+  background: #e2cc9a;
   box-shadow: 0 1px 3px #0006;
   transition: transform 0.2s ease;
 }
 .settings input[type="checkbox"]:checked {
-  background: #a9915f;
-  border-color: #c3b18a;
+  background: #c8a96a;
+  border-color: #c8a96a;
 }
 .settings input[type="checkbox"]:checked::before {
   transform: translateX(16px);
@@ -934,9 +973,6 @@ textarea:focus-visible {
   align-items: center;
   gap: 12px;
 }
-.settings-identity img {
-  flex-shrink: 0;
-}
 .maker-about {
   margin-top: 28px;
   padding: 20px 0 8px;
@@ -947,17 +983,45 @@ textarea:focus-visible {
   margin-top: 0;
 }
 .maker-wordmark {
-  display: block;
-  width: min(100%, 290px);
-  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   margin: 20px auto;
   color: var(--ivory);
 }
-.maker-wordmark-detail {
-  color: var(--brass);
+.maker-mark {
+  padding: 6px 4px;
+  border-top: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+.maker-sub {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+/* The settings header's small mark, matching mazzagotte.dev's collapsed-sidebar M. */
+.settings-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-top: 1.5px solid var(--ivory);
+  border-bottom: 1.5px solid var(--ivory);
+  color: var(--ivory);
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
 }
 .maker-about p {
-  color: #dedccb;
+  color: #e8e3d8;
   font-size: 12px;
   letter-spacing: 0.06em;
 }
@@ -972,13 +1036,13 @@ textarea:focus-visible {
   font-weight: 600;
   color: var(--brass);
   background: transparent;
-  border: 1px solid #6b6648;
+  border: 1px solid #5c574e;
   border-radius: 10px;
   margin-top: 18px;
   transition: background 0.15s ease;
 }
 .reset:hover {
-  background: #c3b18a1f;
+  background: #c8a96a1f;
 }
 .city-results {
   display: grid;
@@ -988,7 +1052,7 @@ textarea:focus-visible {
 .city-results button {
   background: var(--field);
   border: 1px solid var(--line);
-  color: #eee9d7;
+  color: #e8e3d8;
   padding: 11px 12px;
   text-align: left;
   border-radius: 10px;
@@ -1212,8 +1276,8 @@ textarea:focus-visible {
     top: 0;
     z-index: 10;
     padding: 4px;
-    background: #101a12f5;
-    border: 1px solid #d8b77b33;
+    background: #151514f5;
+    border: 1px solid #c8a96a33;
     border-radius: 6px;
   }
   .display-idle .topbar {

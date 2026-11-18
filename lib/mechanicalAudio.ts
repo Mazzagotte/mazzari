@@ -10,7 +10,16 @@ export function createClickBuffer(context: AudioContext): AudioBuffer {
   return buffer;
 }
 
-export function playMechanicalClick(context: AudioContext, buffer: AudioBuffer, volume: number): void {
+/**
+ * How busy the board sounds. `activity` is a decaying count of recent flips: one flap gives a soft tick,
+ * a whole board changing at once a fuller clatter. Returns a gain multiplier and the minimum gap between clicks.
+ */
+export function clatterLevel(activity: number): { scale: number; gapMs: number } {
+  const busy = Math.min(1, Math.log2(1 + Math.max(0, activity)) / 5);
+  return { scale: 0.55 + busy * 0.85, gapMs: Math.round(110 - busy * 55) };
+}
+
+export function playMechanicalClick(context: AudioContext, buffer: AudioBuffer, volume: number, scale = 1): void {
   const source = context.createBufferSource(),
     filter = context.createBiquadFilter(),
     gain = context.createGain();
@@ -18,7 +27,10 @@ export function playMechanicalClick(context: AudioContext, buffer: AudioBuffer, 
   source.playbackRate.value = 0.94 + Math.random() * 0.12;
   filter.type = "lowpass";
   filter.frequency.value = 1600;
-  gain.gain.setValueAtTime(Math.min(0.07, volume * 0.08) * (0.85 + Math.random() * 0.15), context.currentTime);
+  gain.gain.setValueAtTime(
+    Math.min(0.1, Math.min(0.07, volume * 0.08) * scale * (0.85 + Math.random() * 0.15)),
+    context.currentTime,
+  );
   source.connect(filter);
   filter.connect(gain);
   gain.connect(context.destination);
