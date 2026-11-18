@@ -1,7 +1,7 @@
 import { leagueLabel, weatherDescription, type League, type Settings } from "./config.ts";
 import { feedStatus, favoriteTeams, gamePages, orderGames, pages, selectGamePage, type Game } from "./display.ts";
 import { favoriteAwareGames, type FinalCache } from "./favoriteGames.ts";
-import { boardLayout } from "./boardLayout.ts";
+import { boardLayout, MAX_COLUMNS } from "./boardLayout.ts";
 import { messagePages } from "./messages.ts";
 import { safeTime } from "./clock.ts";
 import type { Weather } from "./feeds.ts";
@@ -37,7 +37,11 @@ export function buildSportsSections(
       games,
       schedule,
       hasFavorites: !!key,
-      entries: games.map((game) => gamePages(game, settings.timezone, settings.essentialDetails)),
+      entries: games.map((game) => {
+        const pagesForGame = gamePages(game, settings.timezone, settings.essentialDetails);
+        // The league rides on the matchup line ("MLB TOR AT NYY") instead of taking a row of its own.
+        return { ...pagesForGame, matchup: pages(`${leagueLabel(league)} ${pagesForGame.matchup.join(" ")}`) };
+      }),
     };
   });
 }
@@ -88,7 +92,8 @@ export function composeBoard({
   const rotationLines = [...clockLines];
   const w = weather.data?.current;
   const d = weather.data?.daily;
-  const unit = settings.unit === "fahrenheit" ? "°F" : "°C";
+  // A bare degree sign: the unit is set in Settings, and "°F" squeezed into one flap reads poorly.
+  const unit = "°";
   if (settings.showWeather || settings.showForecast) sectionStarts.push(lines.length);
   if (settings.showWeather) {
     if (w)
@@ -109,20 +114,25 @@ export function composeBoard({
     );
   }
   if (settings.showForecast) {
-    lines.push(
-      d
-        ? `HIGH ${Math.round(d.temperature_2m_max[0])}${unit} LOW ${Math.round(d.temperature_2m_min[0])}${unit}`
-        : `FORECAST ${weatherState}`,
-      d ? `RAIN ${Math.round(d.precipitation_probability_max[0])}%` : "",
-    );
-    rotationLines.push(...lines.slice(-2));
+    if (d) {
+      // High, low and rain share one row; in the rare case that overflows 24 columns, they alternate.
+      const temps = `HI ${Math.round(d.temperature_2m_max[0])}${unit} LO ${Math.round(d.temperature_2m_min[0])}${unit}`;
+      const rain = `RAIN ${Math.round(d.precipitation_probability_max[0])}%`;
+      const parts = `${temps} ${rain}`.length > MAX_COLUMNS ? [temps, rain] : [`${temps} ${rain}`];
+      lines.push(parts[tick % parts.length]);
+      rotationLines.push(...parts);
+    } else {
+      lines.push(`FORECAST ${weatherState}`);
+      rotationLines.push(lines.at(-1)!);
+    }
   }
   sportsSections.forEach(({ league, feed, entries, schedule, hasFavorites }, index) => {
     const selection = selectGamePage(entries, tick);
+    // A league with nothing to show (off-season, off day) gives its rows back to the rest of the board.
+    if (!selection && feed.data && !(settings.favoritesOnly && hasFavorites && !schedule.data)) return;
     sectionStarts.push(lines.length);
-    lines.push(leagueLabel(league));
     if (selection) {
-      rotationLines.push(leagueLabel(league), ...entries.flatMap((entry) => [...entry.matchup, ...entry.status]));
+      rotationLines.push(...entries.flatMap((entry) => [...entry.matchup, ...entry.status]));
       const entry = entries[selection.index];
       lines.push(
         entry.matchup[selection.page % entry.matchup.length],
@@ -131,14 +141,11 @@ export function composeBoard({
     } else {
       const scheduleState = feedStatus(hasFavorites, schedule.failed, schedule.updated, current.getTime(), 900000);
       lines.push(
-        settings.favoritesOnly && hasFavorites && !schedule.data
-          ? `SCHEDULE ${scheduleState}`
-          : feed.data
-            ? settings.favoritesOnly
-              ? "NO FAVORITE GAMES"
-              : "NO GAMES"
-            : `SCORES ${sportsStates[index]}`,
-        "",
+        `${leagueLabel(league)} ${
+          settings.favoritesOnly && hasFavorites && !schedule.data
+            ? `SCHEDULE ${scheduleState}`
+            : `SCORES ${sportsStates[index]}`
+        }`,
       );
     }
   });

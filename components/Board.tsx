@@ -51,7 +51,8 @@ function BoardComponent({
                   speed={speed}
                   onFlip={onFlip}
                   reducedMotion={reducedMotion}
-                  delay={artSource ? revealDelay(reveal, r, c, artSource) : c * 18}
+                  // Each column starts a beat after the one to its left, so a change ripples across the row.
+                  delay={artSource ? revealDelay(reveal, r, c, artSource) : c * 40}
                 />
               ))}
             </div>

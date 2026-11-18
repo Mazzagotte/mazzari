@@ -92,10 +92,91 @@ const compose = (settings = DEFAULTS, withWeather = true) =>
 test("daily board shows clock, weather, forecast and an offline league", () => {
   const { layout } = compose();
   assert.ok(layout.lines[0].includes(":"));
-  assert.ok(layout.lines.includes("MLB"));
-  assert.ok(layout.lines.some((line) => line.startsWith("71°F")));
-  assert.ok(layout.lines.some((line) => line.startsWith("HIGH 80°F LOW 55°F")));
-  assert.ok(layout.lines.includes("SCORES OFFLINE"));
+  assert.ok(layout.lines.some((line) => line.startsWith("71° ")));
+  assert.ok(layout.lines.includes("HI 80° LO 55° RAIN 10%"));
+  assert.ok(layout.lines.includes("MLB SCORES OFFLINE"));
+  assert.ok(!layout.lines.includes("MLB"));
+});
+
+test("forecast splits across rotations only when it would overflow the board", () => {
+  const extreme = {
+    ...weather,
+    daily: { temperature_2m_max: [-10], temperature_2m_min: [-20], precipitation_probability_max: [100] },
+  };
+  const at = (tick: number) =>
+    composeBoard({
+      settings: DEFAULTS,
+      now: new Date("2026-10-20T18:00:00Z"),
+      tick,
+      weather: { data: extreme, updated: 1, failed: false },
+      weatherState: "LIVE",
+      sportsSections: [],
+      sportsStates: [],
+      message: null,
+      messages: [],
+    }).layout.lines;
+  assert.ok(at(0).includes("HI -10° LO -20°"));
+  assert.ok(at(1).includes("RAIN 100%"));
+  assert.ok(at(0).every((line) => line.length <= 24));
+});
+
+const game = (id: string, state: string, date: string, away = "TOR", home = "NYY") => ({
+  id,
+  date,
+  state,
+  status: state === "post" ? "FINAL" : "SCHEDULED",
+  teams: [
+    { abbr: away, score: "4", homeAway: "away" },
+    { abbr: home, score: "1", homeAway: "home" },
+  ],
+});
+const sportsBoard = (games: object[], favorites = "", schedule: object[] = []) => {
+  const now = Date.parse("2026-11-18T17:00:00Z");
+  const settings = {
+    ...DEFAULTS,
+    leagues: ["mlb" as const],
+    favoritesByLeague: { ...DEFAULTS.favoritesByLeague, mlb: favorites },
+  };
+  const feed = { data: games as never, updated: now, failed: false };
+  const schedules = favorites
+    ? { mlb: { key: favorites, feed: { data: schedule as never, updated: now, failed: false } } }
+    : {};
+  return composeBoard({
+    settings,
+    now: new Date(now),
+    tick: 0,
+    weather: emptyFeed<Weather>(),
+    weatherState: "OFF",
+    sportsSections: buildSportsSections(settings, { mlb: feed }, schedules, {}, now),
+    sportsStates: ["LIVE"],
+    message: null,
+    messages: [],
+  }).layout.lines;
+};
+
+test("the league rides on the matchup line instead of its own row", () => {
+  const lines = sportsBoard([game("1", "pre", "2026-11-18T23:00:00Z")]);
+  assert.ok(lines.includes("MLB TOR AT NYY"));
+  assert.ok(!lines.includes("MLB"));
+});
+
+test("off-season: weeks-old finals are dropped and the favorite's next game shows", () => {
+  const worldSeries = game("ws", "post", "2026-11-01T00:00:00Z", "MIL", "TB");
+  const opener = game("open", "pre", "2027-03-25T17:35:00Z");
+  assert.ok(!sportsBoard([worldSeries]).some((line) => line.includes("MIL")));
+  const lines = sportsBoard([worldSeries], "NYY", [opener]);
+  assert.ok(lines.includes("MLB TOR AT NYY"));
+  assert.ok(!lines.some((line) => line.includes("MIL")));
+});
+
+test("yesterday's finals of other teams still show", () => {
+  const lines = sportsBoard([game("y", "post", "2026-11-18T01:00:00Z", "MIL", "TB")]);
+  assert.ok(lines.includes("MLB MIL 4 - TB 1"));
+});
+
+test("a league with no games gives its rows back to the board", () => {
+  const lines = sportsBoard([]);
+  assert.ok(!lines.some((line) => line.startsWith("MLB") || line.includes("NO GAMES")));
 });
 
 test("weather without data falls back to its feed state", () => {

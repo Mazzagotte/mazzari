@@ -7,6 +7,14 @@ export type RetainedFinal = { game: Game; observedAt: number };
 export type FinalCache = Partial<Record<League, RetainedFinal[]>>;
 const WEEK = 7 * 86400000;
 const matches = (game: Game, team: string) => game.teams.some((item) => item.abbr.toUpperCase() === team);
+// Finals of other teams stay up for a day and a half after the start time, covering long or late games.
+export const OTHER_FINAL_LIMIT = 36 * 3600000;
+// A favorite's final can also be retained this long past its start, on top of the "keep final scores" hours.
+const FINAL_GRACE = 12 * 3600000;
+const startedBefore = (game: Game, now: number, limit: number) => {
+  const start = game.date ? Date.parse(game.date) : NaN;
+  return Number.isFinite(start) && now - start > limit;
+};
 
 export function scheduleFallbacks(value: unknown): string[] {
   if (!value || typeof value !== "object" || !("season" in value) || !value.season || typeof value.season !== "object")
@@ -99,13 +107,23 @@ export function favoriteAwareGames(
   now: number,
 ): Game[] {
   const teams = favoriteTeams(favorites),
+    favoriteLimit = hours * 3600000 + FINAL_GRACE,
     retained = new Map(
-      finals.filter((entry) => now - entry.observedAt < hours * 3600000).map((entry) => [entry.game.id, entry.game]),
+      finals
+        .filter((entry) => now - entry.observedAt < hours * 3600000 && !startedBefore(entry.game, now, favoriteLimit))
+        .map((entry) => [entry.game.id, entry.game]),
     );
   const favorite = (game: Game) => teams.some((team) => matches(game, team));
   const all = new Map(
     current
-      .filter((game) => game.state !== "post" || !favorite(game) || retained.has(game.id))
+      .filter((game) =>
+        game.state !== "post"
+          ? true
+          : favorite(game)
+            ? retained.has(game.id)
+            : // Off-season scoreboards keep returning the last games played (a World Series weeks later).
+              !startedBefore(game, now, OTHER_FINAL_LIMIT),
+      )
       .map((game) => [game.id, game]),
   );
   for (const game of retained.values()) if (favorite(game) && !all.has(game.id)) all.set(game.id, game);

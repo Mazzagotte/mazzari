@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { flapSequence, MAX_RUN } from "../lib/flapSequence.ts";
 import assert from "node:assert/strict";
 import { feedStatus, gamePages, isQuietTime, orderGames, pages, selectGamePage } from "../lib/display.ts";
 import type { Game } from "../lib/display.ts";
@@ -570,4 +571,20 @@ test("competition-level final leaders produce one labeled performance without mu
   assert.deepEqual(game.details, ["312 PASS YD C.J. STROUD"]);
   assert.deepEqual(game.essentialDetails, []);
   assert.deepEqual(fixture, original);
+});
+
+test("flaps run in order toward the target and never flash symbols", () => {
+  assert.deepEqual(flapSequence("A", "C"), ["B", "C"]);
+  assert.deepEqual(flapSequence(" ", "Z"), ["U", "V", "W", "X", "Y", "Z"]);
+  assert.deepEqual(flapSequence("Z", "B"), ["A", "B"]);
+  assert.deepEqual(flapSequence("3", "7"), ["4", "5", "6", "7"]);
+  assert.deepEqual(flapSequence("M", " "), [" "]);
+  assert.deepEqual(flapSequence("A", "%"), ["%"]);
+  assert.deepEqual(flapSequence("Q", "Q"), []);
+  for (const to of "ABCXYZ0189 :%°") {
+    const run = flapSequence("K", to);
+    assert.ok(run.length <= MAX_RUN);
+    assert.equal(run.at(-1), to);
+    assert.ok(run.slice(0, -1).every((char) => /[A-Z0-9]/.test(char)));
+  }
 });

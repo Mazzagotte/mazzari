@@ -1,6 +1,7 @@
 "use client";
 import { memo, useEffect, useRef, useState } from "react";
 import { SYMBOLS } from "../lib/config";
+import { flapSequence } from "../lib/flapSequence";
 function FlapComponent({
   char,
   speed,
@@ -33,32 +34,15 @@ function FlapComponent({
       setFlipping(false);
       return;
     }
+    // Fixed at the start of each change, so the flap runs A→B→C toward its target.
+    const queue = flapSequence(current.current, clean);
     const step = () => {
       if (cancelled) return;
-      if (current.current === clean) {
+      const next = queue.shift();
+      if (next === undefined) {
         setFlipping(false);
         return;
       }
-      if (isUnit || clean === "#" || current.current === "#" || current.current === "°F" || current.current === "°C") {
-        setTop(current.current);
-        setShown(clean);
-        setFlipping(true);
-        current.current = clean;
-        flipRef.current?.();
-        timer.current = setTimeout(
-          () => {
-            if (!cancelled) setFlipping(false);
-          },
-          Math.max(35, speed),
-        );
-        return;
-      }
-      const at = SYMBOLS.indexOf(current.current),
-        end = SYMBOLS.indexOf(clean);
-      const dist = (end - at + SYMBOLS.length) % SYMBOLS.length;
-      // Cap cycle length so a board update never gets stuck cycling through the entire alphabet.
-      const stride = dist > 12 ? Math.max(1, Math.floor(dist / 5)) : 1;
-      const next = SYMBOLS[(at + stride) % SYMBOLS.length];
       setTop(current.current);
       setShown(next);
       setFlipping(true);
@@ -66,12 +50,12 @@ function FlapComponent({
       flipRef.current?.();
       timer.current = setTimeout(step, Math.max(35, speed));
     };
-    if (current.current !== clean) timer.current = setTimeout(step, delay);
+    if (queue.length) timer.current = setTimeout(step, delay);
     return () => {
       cancelled = true;
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [clean, speed, reducedMotion, delay, isUnit]);
+  }, [clean, speed, reducedMotion, delay]);
   return (
     <div className={`flap${isUnit ? " unit-flap" : ""}`} aria-label={clean}>
       <div className="flap-top">
